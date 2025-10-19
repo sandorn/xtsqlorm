@@ -25,9 +25,10 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from xt_database.untilsql import make_insert_sql, make_update_sql
-from xt_sqlorm.core.async_connection import AsyncSqlConnection
-from xt_wraps.exception import exc_wraps
-from xt_wraps.log import log_wraps, mylog as loger
+from xtsqlorm.core.async_connection import AsyncSqlConnection
+from xtwraps.exception import exception_wraps
+from xtwraps.log import log_wraps
+from xtlog import mylog as loger
 
 
 class AsyncOrmOperations[T]:
@@ -61,7 +62,7 @@ class AsyncOrmOperations[T]:
                 asyncio.set_event_loop(self._loop)
         return self._loop
 
-    @exc_wraps
+    @exception_wraps
     def loop_run(self, coro_list: list[Any]) -> list[Any]:
         """
         运行协程列表直到完成
@@ -81,8 +82,10 @@ class AsyncOrmOperations[T]:
             self._db_conn = AsyncSqlConnection()
         return self._db_conn
 
-    @log_wraps
-    async def get_by_id(self, id_value: int, session: AsyncSession | None = None) -> T | None:
+    @exception_wraps
+    async def get_by_id(
+        self, id_value: int, session: AsyncSession | None = None
+    ) -> T | None:
         """
         异步根据ID获取单条记录
 
@@ -97,16 +100,19 @@ class AsyncOrmOperations[T]:
         try:
             result = await session.get(self._data_model, id_value)
             if result:
-                loger.ok(f'根据ID {id_value}查询{self.id}: 找到')
+                loger.ok(f"根据ID {id_value}查询{self.id}: 找到")
             else:
-                loger.warning(f'根据ID {id_value}查询{self.id}: 未找到')
+                loger.warning(f"根据ID {id_value}查询{self.id}: 未找到")
             return result
         except Exception as e:
-            loger.fail(f'异步查询ID失败: {e}')
+            loger.fail(f"异步查询ID失败: {e}")
             return None
 
-    @log_wraps
-    async def get_one(self, where_dict: dict[str, Any] | None = None, session: AsyncSession | None = None) -> T | None:
+    async def get_one(
+        self,
+        where_dict: dict[str, Any] | None = None,
+        session: AsyncSession | None = None,
+    ) -> T | None:
         """
         异步获取符合条件的单条记录
 
@@ -124,16 +130,21 @@ class AsyncOrmOperations[T]:
                 query = query.filter_by(**where_dict)
             result = await query.first()
             if result:
-                loger.ok(f'查询单个{self.id}，条件{where_dict}: 找到')
+                loger.ok(f"查询单个{self.id}，条件{where_dict}: 找到")
             else:
-                loger.warning(f'查询单个{self.id}，条件{where_dict}: 未找到')
+                loger.warning(f"查询单个{self.id}，条件{where_dict}: 未找到")
             return result
         except Exception as e:
-            loger.fail(f'异步查询单条记录失败: {e}')
+            loger.fail(f"异步查询单条记录失败: {e}")
             return None
 
     @log_wraps(log_result=False)
-    async def query(self, sql: str, params: dict[str, Any] | None = None, session: AsyncSession | None = None) -> list[Any] | int | None:
+    async def query(
+        self,
+        sql: str,
+        params: dict[str, Any] | None = None,
+        session: AsyncSession | None = None,
+    ) -> list[Any] | int | None:
         """
         异步执行SQL查询
 
@@ -147,27 +158,33 @@ class AsyncOrmOperations[T]:
         """
         # 确保sql是字符串类型
         if not isinstance(sql, str):
-            raise TypeError(f'SQL must be a string, got {type(sql).__name__}')
+            raise TypeError(f"SQL must be a string, got {type(sql).__name__}")
 
         # 处理SQL中的占位符格式
-        if '%s' in sql and ':' not in sql:
+        if "%s" in sql and ":" not in sql:
             # 计算%s的数量
-            count = sql.count('%s')
+            count = sql.count("%s")
             new_sql = sql
             for i in range(count):
                 # 确保不会重复替换已替换的部分
-                placeholder = f':param_{i}'
-                new_sql = new_sql.replace('%s', placeholder, 1)
+                placeholder = f":param_{i}"
+                new_sql = new_sql.replace("%s", placeholder, 1)
             sql = new_sql
 
             # 调整参数格式
             if params is not None:
                 if isinstance(params, tuple):
                     # 将元组参数转换为命名字典
-                    params = {f'param_{i}': params[i] for i in range(len(params))}
-                elif isinstance(params, dict) and all(k.startswith('col_') for k in params):
+                    params = {f"param_{i}": params[i] for i in range(len(params))}
+                elif isinstance(params, dict) and all(
+                    k.startswith("col_") for k in params
+                ):
                     # 转换col_*格式参数为param_*格式
-                    params = {f'param_{i}': params[f'col_{i}'] for i in range(count) if f'col_{i}' in params}
+                    params = {
+                        f"param_{i}": params[f"col_{i}"]
+                        for i in range(count)
+                        if f"col_{i}" in params
+                    }
 
         session = session or await self.db.create_session()
         try:
@@ -178,23 +195,25 @@ class AsyncOrmOperations[T]:
             await session.commit()
 
             # 根据结果类型返回不同格式数据
-            if getattr(result, 'returns_rows', False):
+            if getattr(result, "returns_rows", False):
                 # 返回元组列表
                 rows = result.fetchall()
                 # 转换为列表字典格式
                 return [dict(row._mapping) for row in rows]
-            return getattr(result, 'rowcount', 0)
+            return getattr(result, "rowcount", 0)
         except SQLAlchemyError as e:
             await session.rollback()
-            loger.fail(f'执行SQL失败: {sql}, 参数: {params}, 错误: {e}')
+            loger.fail(f"执行SQL失败: {sql}, 参数: {params}, 错误: {e}")
             return None
         except Exception as e:
             await session.rollback()
-            loger.fail(f'查询过程中发生未知错误: {e}')
+            loger.fail(f"查询过程中发生未知错误: {e}")
             return None
 
     @log_wraps
-    async def insert(self, data: dict[str, Any], session: AsyncSession | None = None) -> int:
+    async def insert(
+        self, data: dict[str, Any], session: AsyncSession | None = None
+    ) -> int:
         """
         异步执行单条数据插入操作
 
@@ -212,15 +231,17 @@ class AsyncOrmOperations[T]:
             session.add(instance)
             await session.commit()
             await session.refresh(instance)
-            loger.ok(f'成功插入{self.id}记录')
+            loger.ok(f"成功插入{self.id}记录")
             return 1
         except Exception as e:
             await session.rollback()
-            loger.fail(f'异步插入记录失败: {e}')
+            loger.fail(f"异步插入记录失败: {e}")
             return 0
 
     @log_wraps
-    async def insert_many(self, data_list: list[dict[str, Any]], tablename: str | None = None) -> list[int]:
+    async def insert_many(
+        self, data_list: list[dict[str, Any]], tablename: str | None = None
+    ) -> list[int]:
         """
         异步执行多条数据插入操作
 
@@ -236,20 +257,31 @@ class AsyncOrmOperations[T]:
 
         # 如果未指定表名，则从模型获取
         if not tablename:
-            tablename = getattr(self._data_model, '__tablename__', None)
+            tablename = getattr(self._data_model, "__tablename__", None)
             if not tablename:
-                raise ValueError('表名不能为空')
+                raise ValueError("表名不能为空")
 
         # 生成参数化SQL和参数列表
-        sql_params_list = [make_insert_sql(data_dict, tablename) for data_dict in data_list]
-        coro = [self.query(sql, *params) if isinstance(sql, tuple) else self.query(sql, params) 
-                for sql, params in sql_params_list]
-        
+        sql_params_list = [
+            make_insert_sql(data_dict, tablename) for data_dict in data_list
+        ]
+        coro = [
+            self.query(sql, *params)
+            if isinstance(sql, tuple)
+            else self.query(sql, params)
+            for sql, params in sql_params_list
+        ]
+
         # 使用事件循环运行所有协程
         return self.db.run_until_all(coro)
 
     @log_wraps
-    async def update(self, data: dict[str, Any], where_dict: dict[str, Any], tablename: str | None = None) -> int:
+    async def update(
+        self,
+        data: dict[str, Any],
+        where_dict: dict[str, Any],
+        tablename: str | None = None,
+    ) -> int:
         """
         异步执行单条数据更新操作
 
@@ -263,31 +295,36 @@ class AsyncOrmOperations[T]:
         """
         # 如果未指定表名，则从模型获取
         if not tablename:
-            tablename = getattr(self._data_model, '__tablename__', None)
+            tablename = getattr(self._data_model, "__tablename__", None)
             if not tablename:
-                raise ValueError('表名不能为空')
+                raise ValueError("表名不能为空")
 
         try:
             # 生成更新SQL
             sql_params = make_update_sql(data, where_dict, tablename)
-            
+
             # 执行更新
             if isinstance(sql_params, tuple):
                 sql, params = sql_params
                 if isinstance(params, tuple):
-                    params = {f'param_{i}': v for i, v in enumerate(params)}
+                    params = {f"param_{i}": v for i, v in enumerate(params)}
                 result = await self.query(sql, params)
             else:
                 result = await self.query(sql_params, {**data, **where_dict})
-            
-            loger.ok(f'成功更新{self.id}记录，受影响行数: {result}')
+
+            loger.ok(f"成功更新{self.id}记录，受影响行数: {result}")
             return result if result is not None else 0
         except Exception as e:
-            loger.fail(f'异步更新记录失败: {e}')
+            loger.fail(f"异步更新记录失败: {e}")
             return 0
 
     @log_wraps
-    async def update_many(self, data_list: list[dict[str, Any]], where_list: list[dict[str, Any]], tablename: str | None = None) -> list[int]:
+    async def update_many(
+        self,
+        data_list: list[dict[str, Any]],
+        where_list: list[dict[str, Any]],
+        tablename: str | None = None,
+    ) -> list[int]:
         """
         异步执行多条数据更新操作
 
@@ -301,13 +338,13 @@ class AsyncOrmOperations[T]:
         """
         # 验证输入
         if len(data_list) != len(where_list):
-            raise ValueError('data_list和where_list长度必须一致')
+            raise ValueError("data_list和where_list长度必须一致")
 
         # 如果未指定表名，则从模型获取
         if not tablename:
-            tablename = getattr(self._data_model, '__tablename__', None)
+            tablename = getattr(self._data_model, "__tablename__", None)
             if not tablename:
-                raise ValueError('表名不能为空')
+                raise ValueError("表名不能为空")
 
         # 生成参数化SQL和参数列表
         sql_params_list = []
@@ -317,7 +354,7 @@ class AsyncOrmOperations[T]:
                 sql_params = make_update_sql(data_dict, where_dict, tablename)
                 sql_params_list.append(sql_params)
             except Exception as e:
-                loger.warning(f'生成更新SQL失败: {e}')
+                loger.warning(f"生成更新SQL失败: {e}")
                 continue
 
         # 执行更新操作
@@ -326,17 +363,19 @@ class AsyncOrmOperations[T]:
             if isinstance(sql_params, tuple):
                 sql, params = sql_params
                 if isinstance(params, tuple):
-                    params = {f'param_{i}': v for i, v in enumerate(params)}
+                    params = {f"param_{i}": v for i, v in enumerate(params)}
                 coro_list.append(self.query(sql, params))
             else:
                 sql = sql_params
                 coro_list.append(self.query(sql, {**data_list[i], **where_list[i]}))
 
-        loger.info(f'执行批量更新，记录数量: {len(data_list)}, 表名: {tablename}')
+        loger.info(f"执行批量更新，记录数量: {len(data_list)}, 表名: {tablename}")
         return self.db.run_until_all(coro_list)
 
     @log_wraps
-    async def add_all(self, dict_in_list: list[dict[str, Any]], session: AsyncSession | None = None) -> list[int]:
+    async def add_all(
+        self, dict_in_list: list[dict[str, Any]], session: AsyncSession | None = None
+    ) -> list[int]:
         """
         异步批量添加记录
 
@@ -350,7 +389,7 @@ class AsyncOrmOperations[T]:
         try:
             # 验证输入
             if not dict_in_list:
-                loger.warning('添加记录为空')
+                loger.warning("添加记录为空")
                 return [0]
 
             session = session or await self.db.create_session()
@@ -358,18 +397,20 @@ class AsyncOrmOperations[T]:
                 items_list = [self._data_model(**d) for d in dict_in_list]
                 session.add_all(items_list)
                 await session.commit()
-                loger.ok(f'批量添加成功，记录数: {len(items_list)}')
+                loger.ok(f"批量添加成功，记录数: {len(items_list)}")
                 return [len(items_list)]
             except SQLAlchemyError as e:
                 await session.rollback()
-                loger.fail(f'批量提交失败: {e}')
+                loger.fail(f"批量提交失败: {e}")
                 return [-1]
         except Exception as e:
-            loger.fail(f'执行批量添加失败: {e}')
+            loger.fail(f"执行批量添加失败: {e}")
             return [-1]
 
     @log_wraps
-    async def delete(self, where_dict: dict[str, Any], session: AsyncSession | None = None) -> int:
+    async def delete(
+        self, where_dict: dict[str, Any], session: AsyncSession | None = None
+    ) -> int:
         """
         异步删除符合条件的记录
 
@@ -387,12 +428,12 @@ class AsyncOrmOperations[T]:
                 query = query.filter_by(**where_dict)
             result = await session.delete(query)
             await session.commit()
-            loger.ok(f'成功删除{self.id}记录，受影响行数: {result}')
+            loger.ok(f"成功删除{self.id}记录，受影响行数: {result}")
             return result
         except Exception as e:
             await session.rollback()
-            loger.fail(f'异步删除记录失败: {e}')
+            loger.fail(f"异步删除记录失败: {e}")
             return 0
 
 
-__all__ = ['AsyncOrmOperations']
+__all__ = ["AsyncOrmOperations"]

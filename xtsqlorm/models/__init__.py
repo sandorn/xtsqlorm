@@ -16,25 +16,31 @@ Github       : https://github.com/sandorn/home
 # 导出模型类
 from __future__ import annotations
 
-from xt_sqlorm.models.base import Base, BaseModel, ModelExt
-from xt_sqlorm.models.mixins import IdMixin, SoftDeleteMixin, TimestampMixin, UTCTimeMixin, VersionedMixin
-from xt_sqlorm.models.types import EnumType, JsonEncodedDict, UTCDateTime
+from xtsqlorm.models.base import Base, BaseModel, ModelExt
+from xtsqlorm.models.mixins import (
+    IdMixin,
+    SoftDeleteMixin,
+    TimestampMixin,
+    UTCTimeMixin,
+    VersionedMixin,
+)
+from xtsqlorm.models.types import EnumType, JsonEncodedDict, UTCDateTime
 
 __all__ = [
-    'Base',
-    'BaseModel',
-    'EnumType',
-    'IdMixin',
-    'JsonEncodedDict',
-    'ModelExt',
-    'SoftDeleteMixin',
-    'TimestampMixin',
-    'UTCDateTime',
-    'UTCTimeMixin',
-    'VersionedMixin',
+    "Base",
+    "BaseModel",
+    "EnumType",
+    "IdMixin",
+    "JsonEncodedDict",
+    "ModelExt",
+    "SoftDeleteMixin",
+    "TimestampMixin",
+    "UTCDateTime",
+    "UTCTimeMixin",
+    "VersionedMixin",
 ]
 
 # 版本信息
-__version__ = '1.0.0'
-__author__ = 'sandorn'
-__email__ = 'sandorn@live.cn'
+__version__ = "1.0.0"
+__author__ = "sandorn"
+__email__ = "sandorn@live.cn"

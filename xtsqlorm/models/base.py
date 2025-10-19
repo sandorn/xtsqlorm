@@ -28,8 +28,84 @@ from collections.abc import Sequence
 from typing import Any
 
 from sqlalchemy.orm import DeclarativeBase
-from xt_class import ItemMixin
-from xt_sqlorm.models.mixins.utctime_mixin import UTCTimeMixin
+from xtsqlorm.models.mixins.utctime_mixin import UTCTimeMixin
+
+
+class MixinError(Exception):
+    """Mixin相关错误"""
+
+    pass
+
+
+class ItemGetMixin:
+    """提供下标访问([key])获取属性值的功能
+
+    通过__getitem__方法，允许对象使用字典风格的下标访问方式获取属性值。
+    直接从实例的__dict__中获取值，如果键不存在则返回None。
+    """
+
+    def __getitem__(self, key: str) -> Any:
+        """获取指定键的值
+
+        Args:
+            key: 要获取的属性名
+
+        Returns:
+            属性值，如果不存在则返回None
+        """
+        try:
+            return self.__dict__.get(key)
+        except Exception as e:
+            raise MixinError(f"Failed to get item '{key}': {e}") from e
+
+
+class ItemSetMixin:
+    """提供下标访问([key])设置属性值的功能
+
+    通过__setitem__方法，允许对象使用字典风格的下标访问方式设置属性值。
+    直接在实例的__dict__中设置键值对。
+    """
+
+    def __setitem__(self, key: str, value: Any) -> None:
+        """设置指定键的值
+
+        Args:
+            key: 要设置的属性名
+            value: 要设置的属性值
+        """
+        self.__dict__[key] = value
+
+
+class ItemDelMixin:
+    """提供下标访问([key])删除属性的功能
+
+    通过__delitem__方法，允许对象使用字典风格的下标访问方式删除属性。
+    直接从实例的__dict__中删除指定的键值对。
+    """
+
+    def __delitem__(self, key: str) -> None:
+        """删除指定键的值
+
+        Args:
+            key: 要删除的属性名
+        """
+        self.__dict__.pop(key, None)
+
+
+class ItemMixin(ItemGetMixin, ItemSetMixin, ItemDelMixin):
+    """统一的字典风格访问Mixin"""
+
+    def keys(self) -> list[str]:
+        """返回所有键的列表"""
+        return list(self.__dict__.keys())
+
+    def values(self) -> list[Any]:
+        """返回所有值的列表"""
+        return list(self.__dict__.values())
+
+    def items(self) -> list[tuple[str, Any]]:
+        """返回所有键值对的列表"""
+        return list(self.__dict__.items())
 
 
 class ModelExt(ItemMixin, UTCTimeMixin):
@@ -45,14 +121,20 @@ class ModelExt(ItemMixin, UTCTimeMixin):
         Returns:
             str: 包含类名和非空字段的字符串表示
         """
-        return self.__class__.__name__ + str({key: getattr(self, key) for key in self.keys() if getattr(self, key) is not None})
+        return self.__class__.__name__ + str(
+            {
+                key: getattr(self, key)
+                for key in self.keys()
+                if getattr(self, key) is not None
+            }
+        )
 
     __repr__ = __str__
 
     @classmethod
     def columns(cls) -> list[str]:
         """获取所有列名（排除SQLAlchemy内部属性）"""
-        return [col.name for col in cls.__table__.c if not col.name.startswith('_sa_')]
+        return [col.name for col in cls.__table__.c if not col.name.startswith("_sa_")]
 
     @classmethod
     def keys(cls) -> list[str]:
@@ -86,9 +168,11 @@ class ModelExt(ItemMixin, UTCTimeMixin):
         if isinstance(result, Sequence) and result and isinstance(result[0], cls):
             return [item.to_dict() for item in result]
 
-        raise TypeError(f'不支持的转换类型: {type(result).__name__}')
+        raise TypeError(f"不支持的转换类型: {type(result).__name__}")
 
-    def to_dict(self, alias_dict: dict[str, str] | None = None, exclude_none: bool = False) -> dict[str, Any]:
+    def to_dict(
+        self, alias_dict: dict[str, str] | None = None, exclude_none: bool = False
+    ) -> dict[str, Any]:
         """将单一记录对象转换为字典
 
         支持字段别名映射和空值过滤，灵活满足不同数据输出需求。
@@ -115,13 +199,20 @@ class ModelExt(ItemMixin, UTCTimeMixin):
             reversed_aliases = {}
             for field, alias in alias_dict.items():
                 if alias in reversed_aliases:
-                    raise ValueError(f'别名冲突: {alias} 已映射到多个字段')
+                    raise ValueError(f"别名冲突: {alias} 已映射到多个字段")
                 reversed_aliases[alias] = field
 
         if exclude_none:
-            return {alias_dict.get(col.name, col.name): self[col.name] for col in self.__table__.columns if self[col.name] is not None}
+            return {
+                alias_dict.get(col.name, col.name): self[col.name]
+                for col in self.__table__.columns
+                if self[col.name] is not None
+            }
 
-        return {alias_dict.get(col.name, col.name): self[col.name] for col in self.__table__.columns}
+        return {
+            alias_dict.get(col.name, col.name): self[col.name]
+            for col in self.__table__.columns
+        }
 
 
 class Base(DeclarativeBase, ModelExt):
