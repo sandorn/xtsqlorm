@@ -28,6 +28,7 @@ from collections.abc import Sequence
 from typing import Any
 
 from sqlalchemy.orm import DeclarativeBase
+
 from xtsqlorm.models.mixins.utctime_mixin import UTCTimeMixin
 
 
@@ -121,20 +122,14 @@ class ModelExt(ItemMixin, UTCTimeMixin):
         Returns:
             str: 包含类名和非空字段的字符串表示
         """
-        return self.__class__.__name__ + str(
-            {
-                key: getattr(self, key)
-                for key in self.keys()
-                if getattr(self, key) is not None
-            }
-        )
+        return self.__class__.__name__ + str({key: getattr(self, key) for key in self.keys() if getattr(self, key) is not None})
 
     __repr__ = __str__
 
     @classmethod
     def columns(cls) -> list[str]:
         """获取所有列名（排除SQLAlchemy内部属性）"""
-        return [col.name for col in cls.__table__.c if not col.name.startswith("_sa_")]
+        return [col.name for col in cls.__table__.c if not col.name.startswith('_sa_')]
 
     @classmethod
     def keys(cls) -> list[str]:
@@ -168,11 +163,9 @@ class ModelExt(ItemMixin, UTCTimeMixin):
         if isinstance(result, Sequence) and result and isinstance(result[0], cls):
             return [item.to_dict() for item in result]
 
-        raise TypeError(f"不支持的转换类型: {type(result).__name__}")
+        raise TypeError(f'不支持的转换类型: {type(result).__name__}')
 
-    def to_dict(
-        self, alias_dict: dict[str, str] | None = None, exclude_none: bool = False
-    ) -> dict[str, Any]:
+    def to_dict(self, alias_dict: dict[str, str] | None = None, exclude_none: bool = False) -> dict[str, Any]:
         """将单一记录对象转换为字典
 
         支持字段别名映射和空值过滤，灵活满足不同数据输出需求。
@@ -199,20 +192,13 @@ class ModelExt(ItemMixin, UTCTimeMixin):
             reversed_aliases = {}
             for field, alias in alias_dict.items():
                 if alias in reversed_aliases:
-                    raise ValueError(f"别名冲突: {alias} 已映射到多个字段")
+                    raise ValueError(f'别名冲突: {alias} 已映射到多个字段')
                 reversed_aliases[alias] = field
 
         if exclude_none:
-            return {
-                alias_dict.get(col.name, col.name): self[col.name]
-                for col in self.__table__.columns
-                if self[col.name] is not None
-            }
+            return {alias_dict.get(col.name, col.name): self[col.name] for col in self.__table__.columns if self[col.name] is not None}
 
-        return {
-            alias_dict.get(col.name, col.name): self[col.name]
-            for col in self.__table__.columns
-        }
+        return {alias_dict.get(col.name, col.name): self[col.name] for col in self.__table__.columns}
 
 
 class Base(DeclarativeBase, ModelExt):

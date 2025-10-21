@@ -49,7 +49,7 @@ class SqlConnection(metaclass=SingletonMeta):
     @exception_wraps
     def __init__(
         self,
-        db_key: str = "default",
+        db_key: str = 'default',
         url: str | None = None,
         **kwargs: Any,
     ) -> None:
@@ -63,12 +63,8 @@ class SqlConnection(metaclass=SingletonMeta):
         if not url:
             url = connect_str(db_key)
 
-        engine_config, session_config, remaining_kwargs = self._extract_engine_config(
-            kwargs
-        )
-        self._engine: Engine = create_engine(
-            url=url, **engine_config, **remaining_kwargs
-        )
+        engine_config, session_config, remaining_kwargs = self._extract_engine_config(kwargs)
+        self._engine: Engine = create_engine(url=url, **engine_config, **remaining_kwargs)
         self._session_factory = sessionmaker(bind=self._engine, **session_config)
 
         # 线程安全的会话对象,手动管理生命周期:self._scoped_session.remove()
@@ -77,10 +73,10 @@ class SqlConnection(metaclass=SingletonMeta):
         self._session: Session | None = None
 
         if self.ping():
-            mylog.success(f"SqlConnection@__init__ | 数据库连接已初始化: {self}")
+            mylog.success(f'SqlConnection@__init__ | 数据库连接已初始化: {self}')
 
     def __str__(self) -> str:
-        return f"SqlConnection({self._engine.url!s})"
+        return f'SqlConnection({self._engine.url!s})'
 
     def __enter__(self) -> SqlConnection:
         """上下文管理器入口
@@ -99,40 +95,36 @@ class SqlConnection(metaclass=SingletonMeta):
         try:
             if exc_type is not None:
                 self.rollback()
-                mylog.warning(
-                    f"SqlConnection@__exit__ | 事务回滚，异常: {exc_type.__name__}"
-                )
+                mylog.warning(f'SqlConnection@__exit__ | 事务回滚，异常: {exc_type.__name__}')
             else:
                 self.commit()
         finally:
             self.cleanup_session(exc_val)
 
-    def _extract_engine_config(
-        self, kwargs: dict[str, Any]
-    ) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
+    def _extract_engine_config(self, kwargs: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
         """提取引擎配置参数"""
         # 定义默认值
         engine_defaults = {
-            "pool_size": 5,
-            "max_overflow": 10,
-            "pool_timeout": 30,
-            "pool_recycle": -1,
-            "pool_pre_ping": False,
-            "echo": False,
-            "echo_pool": False,
-            "hide_parameters": False,
-            "future": True,
-            "connect_args": {},
-            "execution_options": {},
+            'pool_size': 5,
+            'max_overflow': 10,
+            'pool_timeout': 30,
+            'pool_recycle': -1,
+            'pool_pre_ping': False,
+            'echo': False,
+            'echo_pool': False,
+            'hide_parameters': False,
+            'future': True,
+            'connect_args': {},
+            'execution_options': {},
         }
 
         session_defaults = {
-            "autocommit": False,
-            "autoflush": True,
-            "expire_on_commit": True,
-            "query_cls": Query,
-            "twophase": False,
-            "info": None,
+            'autocommit': False,
+            'autoflush': True,
+            'expire_on_commit': True,
+            'query_cls': Query,
+            'twophase': False,
+            'info': None,
         }
 
         # 安全提取配置（处理None和类型验证）
@@ -151,23 +143,23 @@ class SqlConnection(metaclass=SingletonMeta):
 
         # 记录未使用的参数
         if kwargs:
-            mylog.warning(f"SqlConnection | 以下参数未被识别: {list(kwargs.keys())}")
+            mylog.warning(f'SqlConnection | 以下参数未被识别: {list(kwargs.keys())}')
 
         return engine_config, session_config, kwargs
 
     @property
     def pool_status(self) -> dict[str, Any]:
         """获取连接池状态信息"""
-        if not hasattr(self, "_engine"):
+        if not hasattr(self, '_engine'):
             return {}
 
         return {
-            "pool_size": self._engine.pool.size(),
-            "dialect": self._engine.dialect.name,
-            "checkedout": self._engine.pool.checkedout(),
-            "checkedin": self._engine.pool.checkedin(),
-            "overflow": self._engine.pool.overflow(),
-            "timeout": self._engine.pool.timeout(),
+            'pool_size': self._engine.pool.size(),
+            'dialect': self._engine.dialect.name,
+            'checkedout': self._engine.pool.checkedout(),
+            'checkedin': self._engine.pool.checkedin(),
+            'overflow': self._engine.pool.overflow(),
+            'timeout': self._engine.pool.timeout(),
         }
 
     @exception_wraps
@@ -175,28 +167,26 @@ class SqlConnection(metaclass=SingletonMeta):
         """获取数据库详细信息"""
         with self._engine.connect() as conn:
             # 获取数据库版本等信息
-            result = conn.execute(text("SELECT version()"))
+            result = conn.execute(text('SELECT version()'))
             version = result.scalar()
 
             # 获取当前连接数
-            result = conn.execute(
-                text("SELECT COUNT(*) FROM information_schema.processlist")
-            )
+            result = conn.execute(text('SELECT COUNT(*) FROM information_schema.processlist'))
             connections = result.scalar()
 
             return {
-                "version": version,
-                "active_connections": connections,
-                "url": str(self._engine.url),
-                "pool_status": self.pool_status,
+                'version': version,
+                'active_connections': connections,
+                'url': str(self._engine.url),
+                'pool_status': self.pool_status,
             }
 
     @property
     def engine(self) -> Engine:
         """获取数据库引擎对象"""
-        if not hasattr(self, "_engine"):
-            mylog.error("SqlConnection@engine | 数据库引擎未初始化")
-            raise RuntimeError("数据库引擎未初始化")
+        if not hasattr(self, '_engine'):
+            mylog.error('SqlConnection@engine | 数据库引擎未初始化')
+            raise RuntimeError('数据库引擎未初始化')
         return self._engine
 
     @property
@@ -207,7 +197,7 @@ class SqlConnection(metaclass=SingletonMeta):
         """
         if self._session is None:
             self._session = self._scoped_session_factory()
-            mylog.success("SqlConnection@session | 安全会话已创建")
+            mylog.success('SqlConnection@session | 安全会话已创建')
         return self._session
 
     @exception_wraps
@@ -220,11 +210,9 @@ class SqlConnection(metaclass=SingletonMeta):
         self._scoped_session_factory.remove()
         self._session = None
         if exception:
-            mylog.success(
-                f"SqlConnection@cleanup_session | 会话已清理，异常: {exception}"
-            )
+            mylog.success(f'SqlConnection@cleanup_session | 会话已清理，异常: {exception}')
         else:
-            mylog.success("SqlConnection@cleanup_session | 安全会话已清理")
+            mylog.success('SqlConnection@cleanup_session | 安全会话已清理')
 
     @exception_wraps
     def new_session(self) -> Session:
@@ -235,13 +223,13 @@ class SqlConnection(metaclass=SingletonMeta):
     def commit(self) -> None:
         """提交当前事务"""
         self.session.commit()
-        mylog.success("SqlConnection@commit | 事务已成功提交")
+        mylog.success('SqlConnection@commit | 事务已成功提交')
 
     @exception_wraps
     def rollback(self) -> None:
         """回滚当前事务"""
         self.session.rollback()
-        mylog.success("SqlConnection@rollback | 事务已回滚")
+        mylog.success('SqlConnection@rollback | 事务已回滚')
 
     @log_wraps
     def execute_sql(self, sql: str, params: dict[str, Any] | None = None) -> Result:
@@ -270,12 +258,12 @@ class SqlConnection(metaclass=SingletonMeta):
         """
         try:
             with self.engine.connect() as conn:
-                conn.execute(text("SELECT 1"))
+                conn.execute(text('SELECT 1'))
             return True
         except Exception as e:
             handle_exception(
                 e,
-                custom_message="SqlConnection@ping | 数据库连接测试失败",
+                custom_message='SqlConnection@ping | 数据库连接测试失败',
                 re_raise=False,
             )
             return False
@@ -293,16 +281,16 @@ class SqlConnection(metaclass=SingletonMeta):
         """
         session = self.new_session()
         try:
-            mylog.debug("SqlConnection@session_scope | 事务开始")
+            mylog.debug('SqlConnection@session_scope | 事务开始')
             yield session
             session.commit()
-            mylog.success("SqlConnection@session_scope | 事务完成")
+            mylog.success('SqlConnection@session_scope | 事务完成')
         except Exception as e:
             session.rollback()
             handle_exception(e, re_raise=True, callfrom=self.session_scope)
         finally:
             session.close()
-            mylog.info("SqlConnection@session_scope | 事务会话关闭")
+            mylog.info('SqlConnection@session_scope | 事务会话关闭')
 
     @log_wraps
     def execute_many(self, sql: str, params_list: list[dict[str, Any]]) -> list[Any]:
@@ -317,39 +305,39 @@ class SqlConnection(metaclass=SingletonMeta):
     @exception_wraps
     def dispose(self) -> None:
         """释放数据库连接资源"""
-        if not hasattr(self, "_engine"):
-            mylog.warning("SqlConnection@dispose | 数据库引擎不存在，无需释放")
+        if not hasattr(self, '_engine'):
+            mylog.warning('SqlConnection@dispose | 数据库引擎不存在，无需释放')
             return
         try:
             self.cleanup_session()
             self.engine.dispose()
-            mylog.info("SqlConnection@dispose | 数据库引擎已释放")
+            mylog.info('SqlConnection@dispose | 数据库引擎已释放')
         finally:
             # 使用元类提供的方法重置单例实例
             type(self).reset_instance()
 
 
-__all__ = ["SqlConnection"]
+__all__ = ['SqlConnection']
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     db_conn = SqlConnection()
     mylog.info(db_conn.ping())
     # 测试同步执行SQL
-    sql_result = db_conn.execute_sql("SELECT 1")
-    mylog.info(f"同步执行SQL测试结果: {sql_result}")
+    sql_result = db_conn.execute_sql('SELECT 1')
+    mylog.info(f'同步执行SQL测试结果: {sql_result}')
     # 展示如何提取数据
     scalar_value = sql_result.scalar()
-    mylog.info(f"从结果中提取单个值: {scalar_value}")
+    mylog.info(f'从结果中提取单个值: {scalar_value}')
 
     # 执行一个返回多行数据的查询示例
-    multi_result = db_conn.execute_sql("SELECT 1 AS id, 2 AS value UNION SELECT 3, 4")
+    multi_result = db_conn.execute_sql('SELECT 1 AS id, 2 AS value UNION SELECT 3, 4')
     all_rows = multi_result.all()
-    mylog.info(f"提取所有行数据: {all_rows}")
+    mylog.info(f'提取所有行数据: {all_rows}')
 
     # 以字典形式获取结果
     dict_rows = multi_result.mappings().all()
-    mylog.info(f"以字典形式提取所有行数据: {dict_rows}")
+    mylog.info(f'以字典形式提取所有行数据: {dict_rows}')
 
     # 测试同步创建会话
     session = db_conn.new_session()
@@ -358,9 +346,9 @@ if __name__ == "__main__":
         ...
     # 测试数据库信息获取
     db_info = db_conn.datainfo()
-    mylog.info(f"数据库信息: {db_info}")
+    mylog.info(f'数据库信息: {db_info}')
 
     # 测试连接池状态
     pool_status = db_conn.pool_status
-    mylog.info(f"连接池状态: {pool_status}")
+    mylog.info(f'连接池状态: {pool_status}')
     db_conn.dispose()

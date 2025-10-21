@@ -27,9 +27,10 @@ import pandas as pd
 from pydantic import BaseModel, ValidationError
 from sqlalchemy import and_, func, or_, text
 from sqlalchemy.orm import Query, Session
-from xtsqlorm.core.connection import SqlConnection
-from xtwraps.log import log_wraps
 from xtlog import mylog
+from xtwraps.log import log_wraps
+
+from xtsqlorm.core.connection import SqlConnection
 
 
 class OrmOperations[T]:
@@ -73,20 +74,20 @@ class OrmOperations[T]:
         current_session = session or self.db.session
 
         try:
-            mylog.info(f"{self.id} | 事务开始")
+            mylog.info(f'{self.id} | 事务开始')
             yield current_session
             if not external_session:
                 current_session.commit()
-                mylog.success(f"{self.id} | 事务成功")
+                mylog.success(f'{self.id} | 事务成功')
         except Exception as e:
             if not external_session:
                 current_session.rollback()
-            mylog.error(f"{self.id} | 事务失败，已回滚")
+            mylog.error(f'{self.id} | 事务失败，已回滚')
             raise e from e
         finally:
             if not external_session:
                 current_session.close()
-                mylog.info(f"{self.id} | 事务会话关闭")
+                mylog.info(f'{self.id} | 事务会话关闭')
 
     def _validate_data(self, data_dict: dict[str, Any]) -> dict[str, Any]:
         """数据验证"""
@@ -95,15 +96,15 @@ class OrmOperations[T]:
                 validated_data = self._validator_model(**data_dict)
                 return validated_data.dict(exclude_unset=True)
             except ValidationError as e:
-                mylog.error(f"{self.id} | 数据验证失败: {e}")
-                raise ValueError(f"数据验证失败: {e}") from e
+                mylog.error(f'{self.id} | 数据验证失败: {e}')
+                raise ValueError(f'数据验证失败: {e}') from e
         return data_dict
 
     @log_wraps
     def get_by_id(self, id_value: int, session: Session | None = None) -> T | None:
         """根据ID获取记录（带缓存）,基础CRUD操作"""
         if self._cache_enabled:
-            cache_key = f"id_{id_value}"
+            cache_key = f'id_{id_value}'
             if cache_key in self._query_cache:
                 return self._query_cache[cache_key]
 
@@ -144,9 +145,7 @@ class OrmOperations[T]:
         with self.transaction_scope(session) as current_session:
             for i in range(0, len(data_list), batch_size):
                 batch_data = data_list[i : i + batch_size]
-                batch_instances = [
-                    self._data_model(**self._validate_data(data)) for data in batch_data
-                ]
+                batch_instances = [self._data_model(**self._validate_data(data)) for data in batch_data]
                 current_session.add_all(batch_instances)
                 instances.extend(batch_instances)
 
@@ -190,22 +189,18 @@ class OrmOperations[T]:
 
     # 统计和分析方法
     @log_wraps
-    def get_field_stats(
-        self, field_name: str, session: Session | None = None
-    ) -> dict[str, Any]:
+    def get_field_stats(self, field_name: str, session: Session | None = None) -> dict[str, Any]:
         """获取字段统计信息"""
         session = session or self.db.session
         field = getattr(self._data_model, field_name)
 
-        stats = session.query(
-            func.count(field), func.min(field), func.max(field), func.avg(field)
-        ).scalar()
+        stats = session.query(func.count(field), func.min(field), func.max(field), func.avg(field)).scalar()
 
         return {
-            "count": stats[0],
-            "min": stats[1],
-            "max": stats[2],
-            "avg": float(stats[3]) if stats[3] else 0,
+            'count': stats[0],
+            'min': stats[1],
+            'max': stats[2],
+            'avg': float(stats[3]) if stats[3] else 0,
         }
 
     # 数据导出方法
@@ -231,9 +226,7 @@ class OrmOperations[T]:
         return pd.read_sql(query.statement, session.bind)
 
     @log_wraps
-    def get_one(
-        self, where_dict: dict[str, Any] | None = None, session: Session | None = None
-    ) -> T | None:
+    def get_one(self, where_dict: dict[str, Any] | None = None, session: Session | None = None) -> T | None:
         """
         获取符合条件的单条记录
 
@@ -251,15 +244,13 @@ class OrmOperations[T]:
             query = query.filter_by(**where_dict)
         result = query.first()
         if result:
-            mylog.ok(f"{msg} | 查询单个{self.id}，条件{where_dict}: 找到: {result}")
+            mylog.ok(f'{msg} | 查询单个{self.id}，条件{where_dict}: 找到: {result}')
         else:
-            mylog.warning(f"{msg} | 查询单个{self.id}，条件{where_dict}: 未找到")
+            mylog.warning(f'{msg} | 查询单个{self.id}，条件{where_dict}: 未找到')
         return result
 
     @log_wraps
-    def get_all(
-        self, where_dict: dict[str, Any] | None = None, session: Session | None = None
-    ) -> list[T]:
+    def get_all(self, where_dict: dict[str, Any] | None = None, session: Session | None = None) -> list[T]:
         """
         获取符合条件的所有记录
 
@@ -277,11 +268,9 @@ class OrmOperations[T]:
             query = query.filter_by(**where_dict)
         result = query.all()
         if result:
-            mylog.ok(
-                f"{msg} | 查询所有{self.id}，条件{where_dict}: 找到{len(result)}条记录"
-            )
+            mylog.ok(f'{msg} | 查询所有{self.id}，条件{where_dict}: 找到{len(result)}条记录')
         else:
-            mylog.warning(f"{msg} | 查询所有{self.id}，条件{where_dict}: 未找到")
+            mylog.warning(f'{msg} | 查询所有{self.id}，条件{where_dict}: 未找到')
         return result
 
     @log_wraps
@@ -291,7 +280,7 @@ class OrmOperations[T]:
         page_size: int = 10,
         where_dict: dict[str, Any] | None = None,
         order_by: str | None = None,
-        order_dir: Literal["asc", "desc"] = "asc",
+        order_dir: Literal['asc', 'desc'] = 'asc',
         session: Session | None = None,
     ) -> tuple[list[T], int]:
         """
@@ -321,27 +310,19 @@ class OrmOperations[T]:
         # 排序
         if order_by:
             order_field = getattr(self._data_model, order_by)
-            query = (
-                query.order_by(order_field.desc())
-                if order_dir == "desc"
-                else query.order_by(order_field)
-            )
+            query = query.order_by(order_field.desc()) if order_dir == 'desc' else query.order_by(order_field)
 
         # 分页
         offset = (page - 1) * page_size
         result = query.offset(offset).limit(page_size).all()
         if result:
-            mylog.ok(
-                f"{msg} | {self.id}分页查询: 页码={page}, 每页条数={page_size}, 总记录数={total_count}"
-            )
+            mylog.ok(f'{msg} | {self.id}分页查询: 页码={page}, 每页条数={page_size}, 总记录数={total_count}')
         else:
-            mylog.warning(f"{msg} | {self.id}分页查询: 未找到")
+            mylog.warning(f'{msg} | {self.id}分页查询: 未找到')
         return result, total_count
 
     @log_wraps
-    def update(
-        self, instance: T, data_dict: dict[str, Any], session: Session | None = None
-    ) -> T:
+    def update(self, instance: T, data_dict: dict[str, Any], session: Session | None = None) -> T:
         """
         更新现有记录
 
@@ -365,13 +346,11 @@ class OrmOperations[T]:
         # 如果没有传入会话，则提交（外部会话由调用者管理事务）
         if not external_session:
             self.db.commit()
-        mylog.ok(f"{msg} | 更新{self.id} {instance.ID}: {data_dict}")
+        mylog.ok(f'{msg} | 更新{self.id} {instance.ID}: {data_dict}')
         return instance
 
     @log_wraps
-    def update_by_id(
-        self, id_value: int, data_dict: dict[str, Any], session: Session | None = None
-    ) -> T | None:
+    def update_by_id(self, id_value: int, data_dict: dict[str, Any], session: Session | None = None) -> T | None:
         """
         根据ID更新记录
 
@@ -387,7 +366,7 @@ class OrmOperations[T]:
         instance = self.get_by_id(id_value, session)
         if instance:
             return self.update(instance, data_dict, session)
-        mylog.warning(f"{msg} | 根据ID {id_value}更新{self.id}失败: 记录不存在")
+        mylog.warning(f'{msg} | 根据ID {id_value}更新{self.id}失败: 记录不存在')
         return None
 
     @log_wraps
@@ -412,7 +391,7 @@ class OrmOperations[T]:
         if not external_session:
             self.db.commit()
 
-        mylog.ok(f"{msg} | 删除{self.id} {instance.ID}")
+        mylog.ok(f'{msg} | 删除{self.id} {instance.ID}')
         return True
 
     @log_wraps
@@ -431,13 +410,11 @@ class OrmOperations[T]:
         instance = self.get_by_id(id_value, session)
         if instance:
             return self.delete(instance, session)
-        mylog.warning(f"{msg} | 删除{self.id}失败: ID {id_value}未找到")
+        mylog.warning(f'{msg} | 删除{self.id}失败: ID {id_value}未找到')
         return False
 
     @log_wraps
-    def bulk_create(
-        self, data_list: list[dict[str, Any]], session: Session | None = None
-    ) -> list[T]:
+    def bulk_create(self, data_list: list[dict[str, Any]], session: Session | None = None) -> list[T]:
         """
         批量创建记录
 
@@ -462,7 +439,7 @@ class OrmOperations[T]:
         if not external_session:
             self.db.commit()
 
-        mylog.ok(f"{msg} | 批量创建{len(instances)}条{self.id}记录")
+        mylog.ok(f'{msg} | 批量创建{len(instances)}条{self.id}记录')
         return instances
 
     @log_wraps
@@ -485,15 +462,13 @@ class OrmOperations[T]:
         """
         msg = self.execute_raw_sql.__name__
         if session:
-            mylog.info(f"{msg} | 使用会话执行原生SQL: {sql}, 参数: {params}")
+            mylog.info(f'{msg} | 使用会话执行原生SQL: {sql}, 参数: {params}')
             return session.execute(text(sql), params or {})
-        mylog.info(f"{msg} | 使用数据库连接执行原生SQL: {sql}, 参数: {params}")
+        mylog.info(f'{msg} | 使用数据库连接执行原生SQL: {sql}, 参数: {params}')
         return self.db.execute_sql(sql, params)
 
     @log_wraps
-    def count(
-        self, where_dict: dict[str, Any] | None = None, session: Session | None = None
-    ) -> int:
+    def count(self, where_dict: dict[str, Any] | None = None, session: Session | None = None) -> int:
         """
         统计符合条件的记录数
 
@@ -506,14 +481,14 @@ class OrmOperations[T]:
         """
         msg = self.count.__name__
         session = session or self.db.session
-        query = session.query(func.count("*")).select_from(self._data_model)
+        query = session.query(func.count('*')).select_from(self._data_model)
         if where_dict:
             query = query.filter_by(**where_dict)
         count = query.scalar() or 0
         if count:
-            mylog.ok(f"{msg} | 统计{self.id}数量，条件{where_dict}: {count}")
+            mylog.ok(f'{msg} | 统计{self.id}数量，条件{where_dict}: {count}')
         else:
-            mylog.warning(f"{msg} | 统计{self.id}数量，条件{where_dict}: 没找到")
+            mylog.warning(f'{msg} | 统计{self.id}数量，条件{where_dict}: 没找到')
         return count
 
     @log_wraps
@@ -537,7 +512,7 @@ class OrmOperations[T]:
         msg = self.from_statement.__name__
         session = session or self.db.session
 
-        mylog.debug(f"▶️ 执行原生SQL: {sql}, 参数: {where_dict}")
+        mylog.debug(f'▶️ 执行原生SQL: {sql}, 参数: {where_dict}')
 
         sql_text = text(sql)
         query = session.query(self._data_model).from_statement(sql_text)
@@ -545,7 +520,7 @@ class OrmOperations[T]:
         # 添加参数
         result = query.params(**where_dict).all() if where_dict else query.all()
 
-        mylog.ok(f"{msg} | 原生SQL查询成功，返回 {len(result)} 条记录")
+        mylog.ok(f'{msg} | 原生SQL查询成功，返回 {len(result)} 条记录')
         return result
 
     @log_wraps
@@ -569,7 +544,7 @@ class OrmOperations[T]:
         msg = self.filter_by_conditions.__name__
         session = session or self.db.session
 
-        mylog.debug(f"🔍 多条件查询: {conditions}, 限制: {raw_count}")
+        mylog.debug(f'🔍 多条件查询: {conditions}, 限制: {raw_count}')
 
         query = session.query(self._data_model)
 
@@ -591,13 +566,11 @@ class OrmOperations[T]:
             query = query.limit(raw_count)
 
         result = query.all()
-        mylog.ok(f"{msg} | 多条件查询成功，返回 {len(result)} 条记录")
+        mylog.ok(f'{msg} | 多条件查询成功，返回 {len(result)} 条记录')
         return result
 
     @log_wraps
-    def pd_get_dict(
-        self, session: Session | None = None
-    ) -> list[dict[str, Any]] | bool:
+    def pd_get_dict(self, session: Session | None = None) -> list[dict[str, Any]] | bool:
         """
         使用Pandas读取表数据并返回字典列表
 
@@ -610,30 +583,24 @@ class OrmOperations[T]:
         msg = self.pd_get_dict.__name__
         session = session or self.db.session
 
-        mylog.debug(f"📊 使用Pandas读取表: {self._data_model.__tablename__}")
+        mylog.debug(f'📊 使用Pandas读取表: {self._data_model.__tablename__}')
 
         try:
-            result = pandas.read_sql_table(
-                self._data_model.__tablename__, con=session.bind
-            )
-            data_dict = result.to_dict(orient="records")
+            result = pandas.read_sql_table(self._data_model.__tablename__, con=session.bind)
+            data_dict = result.to_dict(orient='records')
 
             if data_dict:
-                mylog.ok(f"{msg} | Pandas读取成功，返回 {len(data_dict)} 条记录")
+                mylog.ok(f'{msg} | Pandas读取成功，返回 {len(data_dict)} 条记录')
                 return data_dict
 
-            mylog.warning(f"{msg} | 表 {self._data_model.__tablename__} 中没有数据")
+            mylog.warning(f'{msg} | 表 {self._data_model.__tablename__} 中没有数据')
             return False
         except Exception as e:
-            mylog.error(
-                f"{msg} | Pandas读取表 {self._data_model.__tablename__} 失败: {e!s}"
-            )
+            mylog.error(f'{msg} | Pandas读取表 {self._data_model.__tablename__} 失败: {e!s}')
             raise
 
     @log_wraps
-    def pd_get_list(
-        self, columns: list[str], session: Session | None = None
-    ) -> list[list[Any]] | bool:
+    def pd_get_list(self, columns: list[str], session: Session | None = None) -> list[list[Any]] | bool:
         """
         使用Pandas读取表指定列并返回去重后的列表
 
@@ -647,35 +614,27 @@ class OrmOperations[T]:
         msg = self.pd_get_list.__name__
         session = session or self.db.session
 
-        mylog.debug(
-            f"📊 使用Pandas读取表 {self._data_model.__tablename__} 的列: {columns}"
-        )
+        mylog.debug(f'📊 使用Pandas读取表 {self._data_model.__tablename__} 的列: {columns}')
 
         try:
-            result = pandas.read_sql_table(
-                self._data_model.__tablename__, con=session.bind
-            )
+            result = pandas.read_sql_table(self._data_model.__tablename__, con=session.bind)
             pd_list = result[columns].drop_duplicates().values.tolist()
 
             if pd_list:
-                mylog.ok(f"{msg} | Pandas列读取成功，返回 {len(pd_list)} 条去重记录")
+                mylog.ok(f'{msg} | Pandas列读取成功，返回 {len(pd_list)} 条去重记录')
                 return pd_list
 
-            mylog.warning(
-                f"{msg} | 表 {self._data_model.__tablename__} 的列 {columns} 中没有数据"
-            )
+            mylog.warning(f'{msg} | 表 {self._data_model.__tablename__} 的列 {columns} 中没有数据')
             return False
         except Exception as e:
-            mylog.error(
-                f"{msg} | Pandas读取表 {self._data_model.__tablename__} 的列 {columns} 失败: {e!s}"
-            )
+            mylog.error(f'{msg} | Pandas读取表 {self._data_model.__tablename__} 的列 {columns} 失败: {e!s}')
             raise
 
     @log_wraps
     def bulk_update(
         self,
         data_list: list[dict[str, Any]],
-        where_key: str = "ID",
+        where_key: str = 'ID',
         session: Session | None = None,
     ) -> int:
         """
@@ -706,13 +665,11 @@ class OrmOperations[T]:
         if not external_session:
             self.db.commit()
 
-        mylog.ok(f"{msg} | 批量更新{updated_count}条{self.id}记录")
+        mylog.ok(f'{msg} | 批量更新{updated_count}条{self.id}记录')
         return updated_count
 
     @log_wraps
-    def exists(
-        self, where_dict: dict[str, Any] | None = None, session: Session | None = None
-    ) -> bool:
+    def exists(self, where_dict: dict[str, Any] | None = None, session: Session | None = None) -> bool:
         """
         检查是否存在符合条件的记录
 
@@ -733,8 +690,8 @@ class OrmOperations[T]:
         exists = session.query(query.exists()).scalar()
 
         if exists:
-            mylog.ok(f"{msg} | 检查{self.id}存在，条件{where_dict}: 存在")
+            mylog.ok(f'{msg} | 检查{self.id}存在，条件{where_dict}: 存在')
         else:
-            mylog.warning(f"{msg} | 检查{self.id}存在，条件{where_dict}: 不存在")
+            mylog.warning(f'{msg} | 检查{self.id}存在，条件{where_dict}: 不存在')
 
         return exists

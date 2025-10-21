@@ -16,6 +16,7 @@ Github       : https://github.com/sandorn/home
 from __future__ import annotations
 
 from sqlalchemy import Boolean, Column, DateTime, Integer, String, func
+
 from xtsqlorm.models.base import BaseModel
 from xtsqlorm.models.mixins import IdMixin, TimestampMixin
 from xtsqlorm.models.types import JsonEncodedDict
@@ -24,7 +25,7 @@ from xtsqlorm.models.types import JsonEncodedDict
 class ValidatedJsonEncodedDict(JsonEncodedDict):
     def process_bind_param(self, value, dialect):
         if value is not None and not isinstance(value, dict):
-            raise ValueError("Value must be a dictionary")
+            raise ValueError('Value must be a dictionary')
         # 可以添加更复杂的验证逻辑
         return super().process_bind_param(value, dialect)
 
@@ -42,7 +43,7 @@ class UserModel(BaseModel, IdMixin, TimestampMixin):
     定义用户表结构和字段
     """
 
-    __tablename__ = "users"
+    __tablename__ = 'users'
 
     # 基础信息
     username = Column(String(50), unique=True, nullable=False)
@@ -65,9 +66,9 @@ class UserModel(BaseModel, IdMixin, TimestampMixin):
     def __init__(self, **kwargs):
         """初始化用户模型"""
         super().__init__(**kwargs)
-        if "created_at" not in kwargs:
+        if 'created_at' not in kwargs:
             self.created_at = func.now()
-        if "updated_at" not in kwargs:
+        if 'updated_at' not in kwargs:
             self.updated_at = func.now()
 
     def update_login_info(self):
@@ -82,7 +83,7 @@ class UserProfileModel(BaseModel, IdMixin):
     定义用户扩展资料表结构和字段
     """
 
-    __tablename__ = "user_profiles"
+    __tablename__ = 'user_profiles'
 
     user_id = Column(Integer, nullable=False)
     real_name = Column(String(50))
@@ -96,14 +97,14 @@ class UserProfileModel(BaseModel, IdMixin):
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     # 使用示例
     profile = UserProfileModel(
         user_id=1,
         preferences={
-            "theme": "dark",
-            "language": "zh-CN",
-            "notifications": {"email": True, "push": False, "sms": True},
-            "privacy": {"profile_public": True, "search_indexed": False},
+            'theme': 'dark',
+            'language': 'zh-CN',
+            'notifications': {'email': True, 'push': False, 'sms': True},
+            'privacy': {'profile_public': True, 'search_indexed': False},
         },
     )

@@ -18,14 +18,11 @@ from __future__ import annotations
 
 from typing import Any
 
-from xtsqlorm.core.connection import SqlConnection
-from xtsqlorm.core.factory import (
-    create_orm_operations,
-    create_sqlconnection,
-    reflect_table,
-)
 from user import UserModel
 from xtlog import mylog as log
+
+from xtsqlorm.core.connection import SqlConnection
+from xtsqlorm.core.factory import create_orm_operations, create_sqlconnection, reflect_table
 
 
 # 配置数据库连接
@@ -57,7 +54,7 @@ class UserService:
         """
         with self.user_ops.db.session_scope() as session:
             user = self.user_ops.create(user_data, session)
-            log.info(f"Created user: {user.username}")
+            log.info(f'Created user: {user.username}')
             return user
 
     def get_user_by_id(self, user_id: int) -> UserModel | None:
@@ -71,9 +68,9 @@ class UserService:
         """
         user = self.user_ops.get_by_id(user_id)
         if user:
-            log.info(f"Found user: {user.username}")
+            log.info(f'Found user: {user.username}')
         else:
-            log.warning(f"User with ID {user_id} not found")
+            log.warning(f'User with ID {user_id} not found')
         return user
 
     def get_user_by_username(self, username: str) -> UserModel | None:
@@ -85,16 +82,14 @@ class UserService:
         Returns:
             用户模型对象，如果不存在则返回None
         """
-        user = self.user_ops.get_one({"username": username})
+        user = self.user_ops.get_one({'username': username})
         if user:
-            log.info(f"Found user: {username}")
+            log.info(f'Found user: {username}')
         else:
-            log.warning(f"User {username} not found")
+            log.warning(f'User {username} not found')
         return user
 
-    def update_user(
-        self, user_id: int, update_data: dict[str, Any]
-    ) -> UserModel | None:
+    def update_user(self, user_id: int, update_data: dict[str, Any]) -> UserModel | None:
         """更新用户信息
 
         Args:
@@ -107,9 +102,9 @@ class UserService:
         with self.user_ops.db.session_scope() as session:
             user = self.user_ops.update_by_id(user_id, update_data, session)
             if user:
-                log.info(f"Updated user: {user.username}")
+                log.info(f'Updated user: {user.username}')
             else:
-                log.warning(f"Failed to update user with ID {user_id}: user not found")
+                log.warning(f'Failed to update user with ID {user_id}: user not found')
             return user
 
     def delete_user(self, user_id: int) -> bool:
@@ -124,9 +119,9 @@ class UserService:
         with self.user_ops.db.session_scope() as session:
             success = self.user_ops.delete_by_id(user_id, session)
             if success:
-                log.info(f"Deleted user with ID {user_id}")
+                log.info(f'Deleted user with ID {user_id}')
             else:
-                log.warning(f"Failed to delete user with ID {user_id}: user not found")
+                log.warning(f'Failed to delete user with ID {user_id}: user not found')
             return success
 
     def get_all_users(self, page: int = 1, page_size: int = 10) -> list[dict[str, Any]]:
@@ -139,13 +134,11 @@ class UserService:
         Returns:
             用户数据字典列表
         """
-        users, total = self.user_ops.get_paginated(
-            page=page, page_size=page_size, order_by="created_at", order_dir="desc"
-        )
+        users, total = self.user_ops.get_paginated(page=page, page_size=page_size, order_by='created_at', order_dir='desc')
 
         # 转换为字典列表
         user_dicts = [user.to_dict() for user in users]
-        log.info(f"Retrieved page {page} of users, total: {total}")
+        log.info(f'Retrieved page {page} of users, total: {total}')
 
         return user_dicts
 
@@ -162,12 +155,7 @@ class UserService:
         users = self.user_ops.get_all()
 
         # 简单过滤
-        filtered_users = [
-            user
-            for user in users
-            if keyword.lower() in user.username.lower()
-            or keyword.lower() in user.email.lower()
-        ]
+        filtered_users = [user for user in users if keyword.lower() in user.username.lower() or keyword.lower() in user.email.lower()]
 
         # 转换为字典列表
         user_dicts = [user.to_dict() for user in filtered_users]
@@ -178,10 +166,10 @@ class UserService:
 
 # MySQL连接配置选项
 # 选项1: 使用db_key连接
-DB_KEY = "TXbx"
+DB_KEY = 'TXbx'
 
 # 选项2: 使用连接URL连接
-DB_URL = "mysql://sandorn:123456@localhost:3306/bxflb?charset=utf8mb4"
+DB_URL = 'mysql://sandorn:123456@localhost:3306/bxflb?charset=utf8mb4'
 
 # 当前使用的连接方式
 USE_DB_KEY = True  # 设置为True使用db_key，False使用URL
@@ -200,118 +188,116 @@ def run_example():
 
     try:
         # 创建数据库连接配置
-        conn_config = {"db_key": DB_KEY} if USE_DB_KEY else {"url": DB_URL}
+        conn_config = {'db_key': DB_KEY} if USE_DB_KEY else {'url': DB_URL}
 
         # 1. 示例1: 直接创建数据库连接
-        log.info("=== 示例1: 创建数据库连接 ===")
+        log.info('=== 示例1: 创建数据库连接 ===')
         db_conn = create_sqlconnection(**conn_config, echo=False)
-        log.info("成功创建数据库连接")
+        log.info('成功创建数据库连接')
 
         # 2. 示例2: 通过UserService创建ORM操作对象
-        log.info("\n=== 示例2: 通过UserService创建ORM操作 ===")
+        log.info('\n=== 示例2: 通过UserService创建ORM操作 ===')
         user_service = UserService(**conn_config)
-        log.info("成功创建UserService，连接状态: 可用")
+        log.info('成功创建UserService，连接状态: 可用')
 
         # 创建表（如果不存在）
-        log.info("\n=== 初始化数据库表 ===")
+        log.info('\n=== 初始化数据库表 ===')
         # UserModel.metadata.create_all(db_conn.engine)
-        log.info("数据库表初始化完成")
+        log.info('数据库表初始化完成')
 
         # 3. 示例3: 执行CRUD操作
-        log.info("\n=== 示例3: 执行CRUD操作 ===")
+        log.info('\n=== 示例3: 执行CRUD操作 ===')
 
         # 创建新用户（使用唯一用户名）
         import time
 
         unique_suffix = str(int(time.time()))[-6:]
-        username = f"test_user_{unique_suffix}"
-        email = f"test_{unique_suffix}@example.com"
-        log.info(f"创建新用户... 用户名: {username}")
-        new_user = user_service.create_user(
-            {
-                "username": username,
-                "password": "hashed_password",
-                "email": email,
-                "nickname": "Test User",
-                "is_active": True,
-            }
-        )
-        log.info(f"创建用户成功:{new_user.to_dict()}")
+        username = f'test_user_{unique_suffix}'
+        email = f'test_{unique_suffix}@example.com'
+        log.info(f'创建新用户... 用户名: {username}')
+        new_user = user_service.create_user({
+            'username': username,
+            'password': 'hashed_password',
+            'email': email,
+            'nickname': 'Test User',
+            'is_active': True,
+        })
+        log.info(f'创建用户成功:{new_user.to_dict()}')
 
         # 获取用户（根据用户名而不是ID）
-        log.info("\n根据用户名获取用户...")
+        log.info('\n根据用户名获取用户...')
         user_record = user_service.get_user_by_username(username)
         if user_record:
-            log.info(f"用户详情: {user_record.to_dict()}")
+            log.info(f'用户详情: {user_record.to_dict()}')
 
         # 更新用户（根据用户名而不是ID）
-        log.info("\n更新用户信息...")
+        log.info('\n更新用户信息...')
         # 先根据用户名获取用户ID
         user_for_update = user_service.get_user_by_username(username)
         if user_for_update:
             updated_user = user_service.update_user(
                 user_for_update.ID,
-                {"nickname": "Updated Test User", "email": "updated@example.com"},
+                {'nickname': 'Updated Test User', 'email': 'updated@example.com'},
             )
             if updated_user:
-                log.info(f"更新后的用户详情: {updated_user.to_dict()}")
+                log.info(f'更新后的用户详情: {updated_user.to_dict()}')
 
         # 分页获取用户
-        log.info("\n分页获取用户列表...")
+        log.info('\n分页获取用户列表...')
         users = user_service.get_all_users(page=1, page_size=5)
-        log.info(f"第1页用户列表: {users}")
+        log.info(f'第1页用户列表: {users}')
 
         # 搜索用户
-        log.info("\n搜索用户...")
-        search_results = user_service.search_users("test")
+        log.info('\n搜索用户...')
+        search_results = user_service.search_users('test')
         log.info(f"搜索'test'的结果: {search_results}")
 
         # 4. 示例4: 直接使用create_orm_operations创建ORM操作对象
-        log.info("\n=== 示例4: 直接使用create_orm_operations ===")
+        log.info('\n=== 示例4: 直接使用create_orm_operations ===')
         direct_user_ops = create_orm_operations(UserModel, db_conn=db_conn)
-        log.info("成功直接创建ORM操作对象")
+        log.info('成功直接创建ORM操作对象')
 
         # 验证直接创建的ORM操作对象
         all_users_count = len(direct_user_ops.get_all())
-        log.info(f"使用直接创建的ORM操作获取用户总数: {all_users_count}")
+        log.info(f'使用直接创建的ORM操作获取用户总数: {all_users_count}')
 
         # 5. 示例5: 反射现有表（如果用户表已经存在）
-        log.info("\n=== 示例5: 反射现有表 ===")
+        log.info('\n=== 示例5: 反射现有表 ===')
         try:
             # 假设用户表名是'users'，实际项目中需要根据数据库中的表名调整
-            reflected_model = reflect_table("users", db_conn=db_conn)
-            log.info(f"成功反射表users，创建模型类: {reflected_model.__name__}")
+            reflected_model = reflect_table('users', db_conn=db_conn)
+            log.info(f'成功反射表users，创建模型类: {reflected_model.__name__}')
 
             # 使用反射的模型创建ORM操作
             reflected_ops = create_orm_operations(reflected_model, db_conn=db_conn)
             reflected_users_count = len(reflected_ops.get_all())
-            log.info(f"使用反射模型获取用户总数: {reflected_users_count}")
+            log.info(f'使用反射模型获取用户总数: {reflected_users_count}')
         except Exception as e:
-            log.warning(f"表反射示例失败: {e!s}")
+            log.warning(f'表反射示例失败: {e!s}')
 
         # 清理: 删除创建的测试用户
-        log.info("\n=== 清理测试数据 ===")
+        log.info('\n=== 清理测试数据 ===')
         # 先根据用户名获取用户ID
         user_for_delete = user_service.get_user_by_username(username)
         if user_for_delete:
             success = user_service.delete_user(user_for_delete.ID)
-            log.info(f"删除测试用户结果: {'成功' if success else '失败'}")
+            log.info(f'删除测试用户结果: {"成功" if success else "失败"}')
         else:
-            log.warning("未找到要删除的测试用户")
+            log.warning('未找到要删除的测试用户')
 
-        log.success("\n示例运行完成")
+        log.success('\n示例运行完成')
 
     except Exception as e:
-        log.error(f"示例运行失败: {e!s}")
+        log.error(f'示例运行失败: {e!s}')
         raise
 
     finally:
         # 释放资源
         if db_conn is not None:
             db_conn.dispose()
-            log.info("数据库连接已关闭")
+            log.info('数据库连接已关闭')
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     # 运行示例
     run_example()

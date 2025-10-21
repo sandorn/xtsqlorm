@@ -22,22 +22,16 @@ import asyncio
 import contextlib
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import text
-from sqlalchemy.ext.asyncio import (
-    AsyncEngine,
-    AsyncSession,
-    async_scoped_session,
-    async_sessionmaker,
-    create_async_engine,
-)
+from sqlalchemy import CursorResult, text
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_scoped_session, async_sessionmaker, create_async_engine
 from xt_database.cfg import connect_str
+from xtlog import mylog as loger
 from xtwraps.exception import exception_wraps, handle_exception
 from xtwraps.log import log_wraps
-from xtlog import mylog as loger
 from xtwraps.singleton import SingletonMeta
 
 if TYPE_CHECKING:
-    from sqlalchemy.ext.asyncio import AsyncResult
+    pass
 
 
 class AsyncSqlConnection(metaclass=SingletonMeta):
@@ -56,41 +50,33 @@ class AsyncSqlConnection(metaclass=SingletonMeta):
     @exception_wraps
     def __init__(
         self,
-        db_key: str = "default",
+        db_key: str = 'default',
         url: str | None = None,
         **kwargs: Any,
     ) -> None:
         """初始化异步数据库连接
 
         Args:
-            db_key: 数据库配置键，用于从配置文件中获取连接信息，默认为'default'
-            url: 数据库连接URL，格式为 "dialect+driver://username:password@host:port/database"
+            db_key: 数据库配置键,用于从配置文件中获取连接信息,默认为'default'
+            url: 数据库连接URL,格式为 "dialect+driver://username:password@host:port/database"
             **kwargs: 其他参数
         """
         if not url:
-            url = connect_str(key=db_key, odbc="aiomysql")
+            url = connect_str(key=db_key, odbc='aiomysql')
 
-        engine_config, session_config, remaining_kwargs = self._extract_engine_config(
-            kwargs
-        )
-        self._engine: AsyncEngine = create_async_engine(
-            url=url, **engine_config, **remaining_kwargs
-        )
-        self.async_session_factory = async_sessionmaker(
-            bind=self._engine, **session_config
-        )
+        engine_config, session_config, remaining_kwargs = self._extract_engine_config(kwargs)
+        self._engine: AsyncEngine = create_async_engine(url=str(url), **engine_config, **remaining_kwargs)
+        self.async_session_factory: async_sessionmaker[AsyncSession] = async_sessionmaker(bind=self._engine, **session_config)
 
         # 线程安全的会话对象,手动管理生命周期:self._scoped_session.remove()
-        self._scoped_session_factory = async_scoped_session(
-            self.async_session_factory, scopefunc=asyncio.current_task
-        )
+        self._scoped_session_factory = async_scoped_session(self.async_session_factory, scopefunc=asyncio.current_task)
 
-        # 不主动创建事件循环，让调用方管理
+        # 不主动创建事件循环,让调用方管理
         self._loop = None  # 延迟初始化
         self._session: AsyncSession | None = None
 
         if self.ping():
-            loger.ok(f"AsyncSqlConnection@__init__ | 数据库连接已初始化: {self}")
+            loger.ok(f'AsyncSqlConnection@__init__ | 数据库连接已初始化: {self}')
 
     @property
     def loop(self) -> asyncio.AbstractEventLoop:
@@ -99,7 +85,7 @@ class AsyncSqlConnection(metaclass=SingletonMeta):
             try:
                 self._loop = asyncio.get_running_loop()
             except RuntimeError:
-                # 如果没有运行中的事件循环，创建新的
+                # 如果没有运行中的事件循环,创建新的
                 self._loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(self._loop)
         return self._loop
@@ -118,7 +104,7 @@ class AsyncSqlConnection(metaclass=SingletonMeta):
         return self.loop.run_until_complete(asyncio.gather(*coro_list))
 
     def __str__(self) -> str:
-        return f"AsyncSqlConnection({self.engine.url!s})"
+        return f'AsyncSqlConnection({self.engine.url!s})'
 
     async def __aenter__(self) -> AsyncSqlConnection:
         """异步上下文管理器入口"""
@@ -127,44 +113,40 @@ class AsyncSqlConnection(metaclass=SingletonMeta):
     async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         """异步上下文管理器退出
 
-        自动提交或回滚事务，并关闭会话
+        自动提交或回滚事务,并关闭会话
         """
         try:
             if exc_type is not None:
                 await self.rollback_async()
-                loger.warn(
-                    f"AsyncSqlConnection@__aexit__ | 事务回滚，异常: {exc_type.__name__}"
-                )
+                loger.warn(f'AsyncSqlConnection@__aexit__ | 事务回滚,异常: {exc_type.__name__}')
             else:
                 await self.commit_async()
         finally:
             await self.cleanup_session_async(exc_val)
 
-    def _extract_engine_config(
-        self, kwargs: dict[str, Any]
-    ) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
+    def _extract_engine_config(self, kwargs: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
         """提取引擎配置参数"""
         # 定义默认值
         engine_defaults = {
-            "pool_size": 5,
-            "max_overflow": 10,
-            "pool_timeout": 30,
-            "pool_recycle": -1,
-            "pool_pre_ping": False,
-            "echo": False,
-            "echo_pool": False,
-            "hide_parameters": False,
-            "future": True,
-            "connect_args": {},
-            "execution_options": {},
+            'pool_size': 5,
+            'max_overflow': 10,
+            'pool_timeout': 30,
+            'pool_recycle': -1,
+            'pool_pre_ping': False,
+            'echo': False,
+            'echo_pool': False,
+            'hide_parameters': False,
+            'future': True,
+            'connect_args': {},
+            'execution_options': {},
         }
 
         session_defaults = {
-            "autocommit": False,
-            "autoflush": True,
-            "expire_on_commit": True,
-            "twophase": False,
-            "info": None,
+            'autocommit': False,
+            'autoflush': True,
+            'expire_on_commit': True,
+            'twophase': False,
+            'info': None,
         }
 
         # 安全提取配置（处理None和类型验证）
@@ -183,25 +165,23 @@ class AsyncSqlConnection(metaclass=SingletonMeta):
 
         # 记录未使用的参数
         if kwargs:
-            loger.warning(
-                f"AsyncSqlConnection | 以下参数未被识别: {list(kwargs.keys())}"
-            )
+            loger.warning(f'AsyncSqlConnection | 以下参数未被识别: {list(kwargs.keys())}')
 
         return engine_config, session_config, kwargs
 
     @property
     def pool_status(self) -> dict[str, Any]:
         """获取连接池状态信息"""
-        if not hasattr(self, "_engine"):
+        if not hasattr(self, '_engine'):
             return {}
 
         return {
-            "pool_size": self._engine.pool.size(),
-            "dialect": self._engine.dialect.name,
-            "checkedout": self._engine.pool.checkedout(),
-            "checkedin": self._engine.pool.checkedin(),
-            "overflow": self._engine.pool.overflow(),
-            "timeout": self._engine.pool.timeout(),
+            'pool_size': self._engine.pool.size(),
+            'dialect': self._engine.dialect.name,
+            'checkedout': self._engine.pool.checkedout(),
+            'checkedin': self._engine.pool.checkedin(),
+            'overflow': self._engine.pool.overflow(),
+            'timeout': self._engine.pool.timeout(),
         }
 
     @exception_wraps
@@ -209,20 +189,18 @@ class AsyncSqlConnection(metaclass=SingletonMeta):
         """获取数据库详细信息"""
         async with self._engine.connect() as conn:
             # 获取数据库版本等信息
-            result = await conn.execute(text("SELECT version()"))
+            result = await conn.execute(text('SELECT version()'))
             version = result.scalar()
 
             # 获取当前连接数
-            result = await conn.execute(
-                text("SELECT COUNT(*) FROM information_schema.processlist")
-            )
+            result = await conn.execute(text('SELECT COUNT(*) FROM information_schema.processlist'))
             connections = result.scalar()
 
             return {
-                "version": version,
-                "active_connections": connections,
-                "url": str(self._engine.url),
-                "pool_status": self.pool_status,
+                'version': version,
+                'active_connections': connections,
+                'url': str(self._engine.url),
+                'pool_status': self.pool_status,
             }
 
     def datainfo(self) -> dict[str, Any]:
@@ -232,9 +210,9 @@ class AsyncSqlConnection(metaclass=SingletonMeta):
     @property
     def engine(self) -> AsyncEngine:
         """获取数据库引擎对象"""
-        if not hasattr(self, "_engine"):
-            loger.fail("AsyncSqlConnection@engine | 数据库引擎未初始化")
-            raise RuntimeError("数据库引擎未初始化")
+        if not hasattr(self, '_engine'):
+            loger.fail('AsyncSqlConnection@engine | 数据库引擎未初始化')
+            raise RuntimeError('数据库引擎未初始化')
         return self._engine
 
     @property
@@ -245,7 +223,7 @@ class AsyncSqlConnection(metaclass=SingletonMeta):
         """
         if self._session is None:
             self._session = self._scoped_session_factory()
-            loger.ok("AsyncSqlConnection@session | 安全会话已创建")
+            loger.ok('AsyncSqlConnection@session | 安全会话已创建')
         return self._session
 
     @exception_wraps
@@ -255,17 +233,15 @@ class AsyncSqlConnection(metaclass=SingletonMeta):
             return
 
         await self._session.close()
-        self._scoped_session_factory.remove()
+        await self._scoped_session_factory.remove()
         self._session = None
         if exception:
-            loger.ok(
-                f"AsyncSqlConnection@cleanup_session_async | 会话已清理，异常: {exception}"
-            )
+            loger.ok(f'AsyncSqlConnection@cleanup_session_async | 会话已清理,异常: {exception}')
         else:
-            loger.ok("AsyncSqlConnection@cleanup_session_async | 安全会话已清理")
+            loger.ok('AsyncSqlConnection@cleanup_session_async | 安全会话已清理')
 
     def cleanup_session(self, exception=None):
-        """同步清理当前会话，请求结束时调用
+        """同步清理当前会话,请求结束时调用
 
         Args:
             exception: 可选的异常信息
@@ -280,14 +256,14 @@ class AsyncSqlConnection(metaclass=SingletonMeta):
             AsyncSession: 数据库会话对象
         """
         session = self.async_session_factory()
-        loger.ok("AsyncSqlConnection@new_session | 会话已创建")
+        loger.ok('AsyncSqlConnection@new_session | 会话已创建')
         return session
 
     @exception_wraps
     async def commit_async(self) -> None:
         """异步提交当前事务"""
         await self.session.commit()
-        loger.ok("AsyncSqlConnection@commit_async | 事务已成功提交")
+        loger.ok('AsyncSqlConnection@commit_async | 事务已成功提交')
 
     def commit(self) -> None:
         """同步提交当前事务"""
@@ -297,22 +273,20 @@ class AsyncSqlConnection(metaclass=SingletonMeta):
     async def rollback_async(self) -> None:
         """异步回滚当前事务"""
         await self.session.rollback()
-        loger.ok("AsyncSqlConnection@rollback_async | 事务已回滚")
+        loger.ok('AsyncSqlConnection@rollback_async | 事务已回滚')
 
     def rollback(self) -> None:
         """同步回滚当前事务"""
         return self.loop_run([self.rollback_async()])
 
     @log_wraps
-    async def execute_sql_async(
-        self, sql: str, params: dict[str, Any] | None = None
-    ) -> AsyncResult:
+    async def execute_sql_async(self, sql: str, params: dict[str, Any] | None = None) -> CursorResult[Any]:
         """
         异步执行原生SQL语句
 
         Args:
             sql: SQL查询语句
-            params: SQL参数绑定，默认为None
+            params: SQL参数绑定,默认为None
 
         Returns:
             查询结果
@@ -329,7 +303,7 @@ class AsyncSqlConnection(metaclass=SingletonMeta):
 
         Args:
             sql: SQL查询语句
-            params: SQL参数绑定，默认为None
+            params: SQL参数绑定,默认为None
 
         Returns:
             查询结果(CursorResult对象)
@@ -355,17 +329,16 @@ class AsyncSqlConnection(metaclass=SingletonMeta):
         """异步测试数据库连接是否正常
 
         Returns:
-            连接成功返回True，否则返回False
+            连接成功返回True,否则返回False
         """
         try:
             async with self._engine.connect() as conn:
-                await conn.execute(text("SELECT 1"))
+                await conn.execute(text('SELECT 1'))
             return True
         except Exception as e:
             handle_exception(
-                "AsyncSqlConnection@ping_async | 数据库连接测试失败",
                 e,
-                re_raise=False,
+                custom_message='AsyncSqlConnection@ping_async | 数据库连接测试失败',
             )
             return False
 
@@ -373,7 +346,7 @@ class AsyncSqlConnection(metaclass=SingletonMeta):
         """测试数据库连接是否正常
 
         Returns:
-            连接成功返回True，否则返回False
+            连接成功返回True,否则返回False
         """
         return self.loop_run([self.ping_async()])[0]
 
@@ -386,24 +359,24 @@ class AsyncSqlConnection(metaclass=SingletonMeta):
             async with db.session_scope_async() as session:
                 # 执行数据库操作
                 session.add(some_model)
-                # 自动提交，异常时自动回滚
+                # 自动提交,异常时自动回滚
         """
         session = self.new_session()
         try:
-            loger.start("AsyncSqlConnection@session_scope_async | 事务开始")
+            loger.start('AsyncSqlConnection@session_scope_async | 事务开始')
             yield session
             await session.commit()
-            loger.ok("AsyncSqlConnection@session_scope_async | 事务完成")
+            loger.ok('AsyncSqlConnection@session_scope_async | 事务完成')
         except Exception as e:
             await session.rollback()
             handle_exception(
-                "AsyncSqlConnection@session_scope_async | 事务失败，已回滚",
                 e,
                 re_raise=True,
+                custom_message='AsyncSqlConnection@session_scope_async | 事务失败,已回滚',
             )
         finally:
             await session.close()
-            loger.stop("AsyncSqlConnection@session_scope_async | 事务会话关闭")
+            loger.stop('AsyncSqlConnection@session_scope_async | 事务会话关闭')
 
     @log_wraps
     @contextlib.contextmanager
@@ -414,27 +387,27 @@ class AsyncSqlConnection(metaclass=SingletonMeta):
             with db.session_scope() as session:
                 # 执行数据库操作
                 session.add(some_model)
-                # 自动提交，异常时自动回滚
+                # 自动提交,异常时自动回滚
         """
         session = self.new_session()
         try:
-            loger.start("AsyncSqlConnection@session_scope | 事务开始")
+            loger.start('AsyncSqlConnection@session_scope | 事务开始')
             yield session
             self.loop_run([session.commit()])
-            loger.ok("AsyncSqlConnection@session_scope | 事务完成")
+            loger.ok('AsyncSqlConnection@session_scope | 事务完成')
         except Exception as e:
             self.loop_run([session.rollback()])
             handle_exception(
-                "AsyncSqlConnection.transaction | 事务失败，已回滚", e, re_raise=True
+                e,
+                re_raise=True,
+                custom_message='AsyncSqlConnection.transaction | 事务失败,已回滚',
             )
         finally:
             self.loop_run([session.close()])
-            loger.stop("AsyncSqlConnection@session_scope | 事务会话关闭")
+            loger.stop('AsyncSqlConnection@session_scope | 事务会话关闭')
 
     @log_wraps
-    async def execute_many_async(
-        self, sql: str, params_list: list[dict[str, Any]]
-    ) -> list[Any]:
+    async def execute_many_async(self, sql: str, params_list: list[dict[str, Any]]) -> list[Any]:
         """异步批量执行SQL语句"""
         results = []
         async with self.engine.begin() as conn:
@@ -450,16 +423,16 @@ class AsyncSqlConnection(metaclass=SingletonMeta):
     @exception_wraps
     async def dispose_async(self) -> None:
         """异步释放数据库连接资源"""
-        if not hasattr(self, "_engine"):
-            loger.warn("AsyncSqlConnection@dispose_async | 数据库引擎不存在，无需释放")
+        if not hasattr(self, '_engine'):
+            loger.warn('AsyncSqlConnection@dispose_async | 数据库引擎不存在,无需释放')
             return
         try:
             await self.cleanup_session_async()
             await self.engine.dispose()
-            loger.stop("AsyncSqlConnection@dispose_async | 数据库引擎已释放")
+            loger.stop('AsyncSqlConnection@dispose_async | 数据库引擎已释放')
         finally:
             # 清理事件循环
-            if hasattr(self, "_loop") and self._loop:
+            if hasattr(self, '_loop') and self._loop:
                 if not self._loop.is_running():
                     self._loop.close()
                 self._loop = None
@@ -471,28 +444,28 @@ class AsyncSqlConnection(metaclass=SingletonMeta):
         return self.loop_run([self.dispose_async()])
 
 
-__all__ = ["AsyncSqlConnection"]
+__all__ = ['AsyncSqlConnection']
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     db_conn = AsyncSqlConnection()
     loger(db_conn.ping())
 
     # 测试同步执行SQL
-    sql_result = db_conn.execute_sql("SELECT 1")
-    loger(f"同步执行SQL测试结果: {sql_result}")
+    sql_result = db_conn.execute_sql('SELECT 1')
+    loger(f'同步执行SQL测试结果: {sql_result}')
     # 展示如何提取数据
     scalar_value = sql_result.scalar()
-    loger(f"从结果中提取单个值: {scalar_value}")
+    loger(f'从结果中提取单个值: {scalar_value}')
 
     # 执行一个返回多行数据的查询示例
-    multi_result = db_conn.execute_sql("SELECT 1 AS id, 2 AS value UNION SELECT 3, 4")
+    multi_result = db_conn.execute_sql('SELECT 1 AS id, 2 AS value UNION SELECT 3, 4')
     all_rows = multi_result.all()
-    loger(f"提取所有行数据: {all_rows}")
+    loger(f'提取所有行数据: {all_rows}')
 
     # 以字典形式获取结果
     dict_rows = multi_result.mappings().all()
-    loger(f"以字典形式提取所有行数据: {dict_rows}")
+    loger(f'以字典形式提取所有行数据: {dict_rows}')
     # 测试同步创建会话
     session = db_conn.new_session()
 
@@ -505,11 +478,11 @@ if __name__ == "__main__":
 
     # 测试数据库信息获取
     db_info = db_conn.datainfo()
-    loger(f"数据库信息: {db_info}")
+    loger(f'数据库信息: {db_info}')
 
     # 测试连接池状态
     pool_status = db_conn.pool_status
-    loger(f"连接池状态: {pool_status}")
+    loger(f'连接池状态: {pool_status}')
 
     # 测试异步事务上下文管理器
     async def test_session_scope_async():
@@ -517,14 +490,14 @@ if __name__ == "__main__":
             async with db_conn.session_scope_async():
                 ...
         except Exception as e:
-            loger(f"异步事务上下文管理器测试失败: {e!s}")
+            loger(f'异步事务上下文管理器测试失败: {e!s}')
 
     # 测试释放连接资源
     async def test_dispose():
         try:
             await db_conn.dispose_async()
         except Exception as e:
-            loger(f"异步释放连接资源测试失败: {e!s}")
+            loger(f'异步释放连接资源测试失败: {e!s}')
 
     # 运行异步测试
     db_conn.loop_run([test_session_scope_async(), test_dispose()])
