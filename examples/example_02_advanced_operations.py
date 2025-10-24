@@ -145,7 +145,7 @@ def example_4_batch_operations():
             updated_count = ops.bulk_update(update_data)
             print(f'✅ 批量更新成功: {updated_count} 条记录')
         else:
-            print('⚠️  跳过批量更新（没有足够的测试数据）')
+            print('⚠️  跳过批量更新(没有足够的测试数据)')
 
         # 清理测试数据
         print('\n【清理测试数据】')
@@ -216,13 +216,13 @@ def example_7_cache():
 
     ops = create_orm_operations(UserModel, db_key='default', cache_enabled=True)
 
-    # 第一次查询（从数据库）
-    user1 = ops.get_by_id(1)
-    print('✅ 第一次查询（从数据库）')
+    # 第一次查询(从数据库)
+    ops.get_by_id(1)
+    print('✅ 第一次查询(从数据库)')
 
-    # 第二次查询（从缓存）
-    user2 = ops.get_by_id(1)
-    print('✅ 第二次查询（从缓存）')
+    # 第二次查询(从缓存)
+    ops.get_by_id(1)
+    print('✅ 第二次查询(从缓存)')
 
     # 清空缓存
     ops.clear_cache()

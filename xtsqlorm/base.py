@@ -153,7 +153,7 @@ class ModelExt(ItemMixin, UTCTimeMixin):
     @classmethod
     def keys(cls) -> list[str]:
         """获取所有映射属性名(包括关系属性)"""
-        return list(cls.__mapper__.attrs.keys())
+        return list(cls.__mapper__.attrs.keys())  # type: ignore[attr-defined]
 
     @classmethod
     def make_dict(cls, result: Any) -> Any:

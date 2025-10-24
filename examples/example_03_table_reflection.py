@@ -51,7 +51,7 @@ def example_2_get_or_create_table():
 
     conn_mgr = create_connection_manager(db_key='default')
 
-    # 方式1: 仅反射（new_table_name=None）
+    # 方式1: 仅反射(new_table_name=None)
     print('\n【方式1: 仅反射现有表】')
     UserModel = get_or_create_table_model(
         source_table_name='users',
@@ -60,7 +60,7 @@ def example_2_get_or_create_table():
     )
     print(f'✅ 反射表: {UserModel.__tablename__}')  # type: ignore[attr-defined]
 
-    # 方式2: 复制表结构（实际执行示例）
+    # 方式2: 复制表结构(实际执行示例)
     print('\n【方式2: 复制表结构到临时表】')
     try:
         # 创建一个临时表用于演示
@@ -91,7 +91,7 @@ def example_2_get_or_create_table():
         print(f'   已清理临时表: {temp_table_name}')
 
     except Exception as e:
-        print(f'⚠️  复制表结构失败（可能表不存在）: {e}')
+        print(f'⚠️  复制表结构失败(可能表不存在): {e}')
 
     conn_mgr.dispose()
 
@@ -100,7 +100,7 @@ def example_3_generate_model_file():
     """示例 3: 生成模型文件"""
     print_section('示例 3: 生成模型文件')
 
-    # 实际执行（可选）
+    # 实际执行(可选)
     try:
         output_file = 'examples/generated_models.py'
         generate_model_file(
@@ -110,10 +110,10 @@ def example_3_generate_model_file():
         )
         print(f'\n✅ 模型文件已生成: {output_file}')
 
-        # 读取并显示生成的文件内容（前20行）
+        # 读取并显示生成的文件内容(前20行)
         with open(output_file) as f:
             lines = f.readlines()[:20]
-            print('\n生成的模型文件预览（前20行）:')
+            print('\n生成的模型文件预览(前20行):')
             print(''.join(lines))
 
     except Exception as e:

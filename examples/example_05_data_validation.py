@@ -465,7 +465,7 @@ def example_7_chinese_id_card():
     except ValidationError as e:
         print(f'   ❌ 格式错误(字符): {e.message}')
 
-    print('   ℹ️  完整测试需要真实有效的身份证号码')
+    print('   i️  完整测试需要真实有效的身份证号码')
 
 
 def example_8_real_world_scenarios():

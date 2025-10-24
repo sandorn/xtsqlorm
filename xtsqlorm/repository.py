@@ -229,7 +229,7 @@ class Repository[T](IRepository[T]):
             ...     print('用户存在')
         """
         with self._session_provider.transaction() as session:
-            return session.query(self._model).filter(self._model.id == id_value).count() > 0
+            return session.query(self._model).filter(self._model.id == id_value).count() > 0  # type: ignore[attr-defined]
 
     # ============ 高级用法: 外部事务管理 ============
 

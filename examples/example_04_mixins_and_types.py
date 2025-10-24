@@ -26,9 +26,9 @@ def print_section(title: str):
     print('=' * 60)
 
 
-# ============ 定义演示类（不使用SQLAlchemy，仅演示Mixin功能）============
+# ============ 定义演示类(不使用SQLAlchemy,仅演示Mixin功能)============
 
-# 注意：这些类仅用于演示 Mixin 的方法功能，不涉及数据库操作
+# 注意：这些类仅用于演示 Mixin 的方法功能,不涉及数据库操作
 
 
 class DemoArticle:
@@ -89,8 +89,8 @@ def example_2_timestamp_mixin():
     print_section('示例 2: TimestampMixin - 时间戳')
 
     print('TimestampMixin 提供:')
-    print('   - created_at: 创建时间（自动设置）')
-    print('   - updated_at: 更新时间（自动更新）')
+    print('   - created_at: 创建时间(自动设置)')
+    print('   - updated_at: 更新时间(自动更新)')
     print('')
     print('DemoArticle 模拟了 TimestampMixin:')
     print(f'   - 有 created_at 字段: {hasattr(DemoArticle, "created_at")}')
@@ -102,7 +102,7 @@ def example_3_soft_delete_mixin():
     print_section('示例 3: SoftDeleteMixin - 软删除')
 
     print('SoftDeleteMixin 提供:')
-    print('   - deleted_at: 删除时间（NULL 表示未删除）')
+    print('   - deleted_at: 删除时间(NULL 表示未删除)')
     print('   - soft_delete(): 软删除方法')
     print('   - restore(): 恢复方法')
     print('   - is_deleted 属性: 是否已删除')
@@ -133,10 +133,10 @@ def example_4_versioned_mixin():
     print_section('示例 4: VersionedMixin - 版本控制')
 
     print('VersionedMixin 提供:')
-    print('   - version: 版本号（每次更新自增）')
+    print('   - version: 版本号(每次更新自增)')
     print('   - increment_version(): 增加版本号')
     print('')
-    print('用于乐观锁实现，防止并发更新冲突')
+    print('用于乐观锁实现,防止并发更新冲突')
     print('')
     print('【实际演示】')
 
@@ -164,7 +164,7 @@ def example_5_utc_time_mixin():
     print('   - updated_at_utc: UTC 更新时间')
     print('')
     print('说明:')
-    print('   在实际使用中，继承 UTCTimeMixin 的模型会自动拥有这些字段')
+    print('   在实际使用中,继承 UTCTimeMixin 的模型会自动拥有这些字段')
     print('   时间会自动转换为 UTC 存储')
 
 
@@ -203,7 +203,7 @@ def example_7_utc_datetime():
     print('UTCDateTime 类型:')
     print('   - 自动处理时区转换')
     print('   - 存储为 UTC 时间')
-    print('   - 读取时转换为本地时区（可选）')
+    print('   - 读取时转换为本地时区(可选)')
     print('')
     print('【实际演示】')
 
@@ -240,7 +240,7 @@ def example_8_enum_type():
     config3 = DemoConfig(key='app_config', value='test', category='app')
     print(f'✅ 创建配置3: category={config3.category} (有效值)')
 
-    print('\n说明: 如果使用无效值（如 "invalid"），在数据库插入时会报错')
+    print('\n说明: 如果使用无效值(如 "invalid"),在数据库插入时会报错')
 
 
 def example_9_combined_usage():
@@ -284,7 +284,7 @@ def example_9_combined_usage():
     article.restore()
     print(f'   恢复后: is_deleted={article.is_deleted}, deleted_at={article.deleted_at}')
 
-    print('\n💡 所有 Mixin 功能都可以无缝组合使用！')
+    print('\n💡 所有 Mixin 功能都可以无缝组合使用!')
 
 
 def main():

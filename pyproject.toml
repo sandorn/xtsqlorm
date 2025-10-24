@@ -86,7 +86,15 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]  # 未使用的导入在 __init__ 中可接受
-"examples/**" = ["F401"]  # 示例代码中允许未使用的导入
+"examples/**" = [
+    "F401",  # 示例代码中允许未使用的导入
+    "N806",  # 示例代码中允许大写变量名(如 UserModel)
+    "N817",  # 示例代码中允许缩写导入(如 UM)
+    "S106",  # 示例代码中允许硬编码密码(测试数据)
+    "C901",  # 示例代码中允许较高复杂度(教学目的)
+]
+"examples/test_all_examples.py" = ["S404", "S603"]  # 测试脚本允许 subprocess
+"examples/user.py" = ["S106"]  # 测试模型允许硬编码密码
 
 [tool.ruff.lint.isort]
 known-first-party = []

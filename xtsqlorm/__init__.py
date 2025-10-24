@@ -32,6 +32,8 @@ XT-SQLORM是一个基于SQLAlchemy的ORM框架,采用扁平化架构设计
 
 from __future__ import annotations
 
+__version__ = '0.1.0'
+
 # ============ 异步架构组件 ============
 from .async_engine import AsyncConnectionManager
 from .async_repository import AsyncRepository
@@ -100,6 +102,8 @@ from .validators import (
 )
 
 __all__ = (
+    # ============ 版本信息 ============
+    '__version__',
     # ============ 同步抽象接口 ============
     'IConnectionManager',
     'IRepository',

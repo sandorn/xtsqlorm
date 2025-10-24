@@ -59,9 +59,9 @@ def example_2_transaction_rollback():
     from user import UserModel
 
     session_provider = create_session_provider(db_key='default')
-    user_repo = create_repository(UserModel, session_provider=session_provider)
+    create_repository(UserModel, session_provider=session_provider)
 
-    print('当发生异常时，事务会自动回滚:\n')
+    print('当发生异常时,事务会自动回滚:\n')
 
     try:
         with session_provider.transaction() as session:
@@ -91,7 +91,7 @@ def example_3_unit_of_work():
     print('工作单元的优势:')
     print('   - 统一管理多个仓储')
     print('   - 自动事务控制')
-    print('   - 原子性操作（全部成功或全部失败）\n')
+    print('   - 原子性操作(全部成功或全部失败)\n')
 
     print('【实际执行示例】')
 
@@ -100,7 +100,7 @@ def example_3_unit_of_work():
         print('✅ 工作单元事务已开始')
 
         # 获取仓储 - 使用 repository() 方法
-        users_repo = uow.repository(UserModel)
+        uow.repository(UserModel)
         print('✅ 已创建 users 仓储')
 
         # 在同一事务中执行操作 - 使用 uow.session
@@ -121,7 +121,7 @@ def example_4_complex_transaction():
     user_repo = create_repository(UserModel, session_provider=session_provider)
     profile_repo = create_repository(UserProfileModel, session_provider=session_provider)
 
-    print('场景: 创建用户和用户资料（需要保证原子性）\n')
+    print('场景: 创建用户和用户资料(需要保证原子性)\n')
     print('【实际执行示例】')
 
     try:
@@ -142,7 +142,7 @@ def example_4_complex_transaction():
             session.flush()  # 确保获取到 user.id
             print(f'✅ 步骤1: 创建用户成功, ID={user.id}')  # type: ignore[attr-defined]
 
-            # 2. 创建用户资料（需要 user_profiles 表存在）
+            # 2. 创建用户资料(需要 user_profiles 表存在)
             profile = profile_repo.create_in_session(
                 {
                     'user_id': user.id,  # type: ignore[attr-defined]
@@ -162,16 +162,16 @@ def example_4_complex_transaction():
         print('   已清理测试数据')
 
     except Exception as e:
-        print(f'⚠️  操作失败（可能表不存在）: {e}')
+        print(f'⚠️  操作失败(可能表不存在): {e}')
         print('   说明: 此示例需要 user_profiles 表存在')
-        print('   如果任何步骤失败，整个事务会自动回滚')
+        print('   如果任何步骤失败,整个事务会自动回滚')
 
 
 def example_5_nested_transactions():
-    """示例 5: 嵌套事务（说明）"""
+    """示例 5: 嵌套事务(说明)"""
     print_section('示例 5: 嵌套事务说明')
 
-    print('SQLAlchemy 支持嵌套事务（Savepoint）:')
+    print('SQLAlchemy 支持嵌套事务(Savepoint):')
     print('')
     print('from sqlalchemy.orm import Session')
     print('from xtsqlorm import create_session_provider')
@@ -187,23 +187,23 @@ def example_5_nested_transactions():
     print('        # 内层事务')
     print('        print("内层事务开始")')
     print('        # 执行操作...')
-    print('        # 如果失败，只回滚到 savepoint')
+    print('        # 如果失败,只回滚到 savepoint')
     print('')
     print('    # 外层事务继续')
     print('    # 执行更多操作...')
     print('')
-    print('注意: 嵌套事务依赖数据库支持（如 MySQL, PostgreSQL）')
+    print('注意: 嵌套事务依赖数据库支持(如 MySQL, PostgreSQL)')
 
 
 def example_6_manual_transaction():
     """示例 6: 手动事务控制"""
-    print_section('示例 6: 手动事务控制（不推荐）')
+    print_section('示例 6: 手动事务控制(不推荐)')
 
     from user import UserModel
 
-    session_provider = create_session_provider(db_key='default')
+    create_session_provider(db_key='default')
 
-    print('虽然可以手动控制事务，但不推荐:')
+    print('虽然可以手动控制事务,但不推荐:')
     print('')
     print('# 不推荐的方式')
     print('session = session_provider.create_session()')
@@ -216,7 +216,7 @@ def example_6_manual_transaction():
     print('finally:')
     print('    session.close()')
     print('')
-    print('推荐使用 transaction() 上下文管理器（自动管理）')
+    print('推荐使用 transaction() 上下文管理器(自动管理)')
 
 
 def main():

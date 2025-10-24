@@ -100,7 +100,7 @@ class UserService:
         if existing_email:
             raise ValueError(f'邮箱 {data.email} 已被注册')
 
-        # 创建用户（实际执行）
+        # 创建用户(实际执行)
         print(f'准备创建用户: {data.username}')
         print(f'   - 邮箱: {data.email}')
         print(f'   - 昵称: {data.nickname or data.username}')
@@ -138,7 +138,7 @@ class UserService:
         if not user:
             raise ValueError('用户名或密码错误')
 
-        # 验证密码（示例）
+        # 验证密码(示例)
         # if user.password != self.hash_password(data.password):
         #     raise ValueError('用户名或密码错误')
 
@@ -146,7 +146,7 @@ class UserService:
         if not user.is_active:  # type: ignore[attr-defined]
             raise ValueError('用户已被禁用')
 
-        # 更新登录信息（示例）
+        # 更新登录信息(示例)
         print(f'用户 {user.username} 登录成功')  # type: ignore[attr-defined]
         # user.update_login_info()
         # self.user_ops.update(user.id, {'last_login_at': datetime.now(), 'login_count': user.login_count})
@@ -182,12 +182,12 @@ class UserService:
         for key, value in update_data.items():
             print(f'   - {key}: {value}')
 
-        # 更新（示例）
+        # 更新(示例)
         # updated_user = self.user_ops.update(user_id, update_data)
 
         return {
             'user_id': user_id,
-            'message': '更新成功（模拟）',
+            'message': '更新成功(模拟)',
         }
 
     def get_user_list(self, page: int = 1, page_size: int = 10) -> dict:
@@ -274,7 +274,7 @@ def example_complete_workflow():
     # 创建用户服务
     user_service = UserService(session_provider)
 
-    # 1. 用户注册（实际执行）
+    # 1. 用户注册(实际执行)
     import time
 
     timestamp = int(time.time())
@@ -312,7 +312,7 @@ def example_complete_workflow():
             print(f'⚠️  登录失败: {e}')
 
         try:
-            # 3. 更新用户信息（实际执行）
+            # 3. 更新用户信息(实际执行)
             update_data = UserUpdateSchema(
                 nickname=f'新昵称_{timestamp}',
                 phone='13900139000',
@@ -331,7 +331,7 @@ def example_complete_workflow():
 
     # 5. 统计数据
     print('\n步骤 5: 统计数据')
-    stats = user_service.get_statistics()
+    user_service.get_statistics()
     print('✅ 统计完成')
 
     # 6. 清理测试数据
@@ -350,10 +350,10 @@ def main():
     print('xtsqlorm 完整工作流示例')
     print('=' * 80)
     print('\n本示例演示一个真实的用户管理场景:')
-    print('1. 用户注册（数据验证）')
-    print('2. 用户登录（密码验证）')
+    print('1. 用户注册(数据验证)')
+    print('2. 用户登录(密码验证)')
     print('3. 更新用户信息')
-    print('4. 查询用户列表（分页）')
+    print('4. 查询用户列表(分页)')
     print('5. 数据统计和分析')
 
     example_complete_workflow()

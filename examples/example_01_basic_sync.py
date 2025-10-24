@@ -30,7 +30,7 @@ def example_1_quick_start():
     from sqlalchemy import inspect
     from user import UserModel
 
-    # 检查数据库中表users是否存在，不存在则创建
+    # 检查数据库中表users是否存在,不存在则创建
     conn_mgr = create_connection_manager(db_key='default')
     inspector = inspect(conn_mgr.engine)
     table_name = 'users'
@@ -43,7 +43,7 @@ def example_1_quick_start():
         UserModel.metadata.create_all(conn_mgr.engine)
         print(f'✅ 表 {table_name} 创建成功')
 
-    # 方式1: 一步到位（推荐）
+    # 方式1: 一步到位(推荐)
     user_repo = create_repository(UserModel, db_key='default')
     print(f'✅ 创建仓储: {user_repo}')
 
@@ -51,7 +51,7 @@ def example_1_quick_start():
     total = user_repo.count()
     print(f'✅ 用户总数: {total}')
 
-    # 查询所有用户（限制5条）
+    # 查询所有用户(限制5条)
     users = user_repo.get_all(limit=5)
     print(f'✅ 查询前5个用户: {len(users)} 条')
     for user in users:

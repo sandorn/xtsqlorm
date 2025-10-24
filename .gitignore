@@ -1,0 +1,124 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/
+
+# Type Checking
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pytype/
+.pyre/
+
+# Documentation
+docs/_build/
+docs/.doctrees/
+site/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+.temp/
+.tmp/
+
+# Project specific
+fix_fullwidth_punctuation.py
+test_*.py
+!tests/test_*.py
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Ruff
+.ruff_cache/
+
+# uv
+.python-version
+uv.lock
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Distribution
+*.whl
+*.tar.gz
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb
+
+# pyenv
+.python-version
+
+# Environment variables
+.env.local
+.env.*.local
+
+# Lock files (optional, keep if needed)
+# poetry.lock
+# Pipfile.lock
+
+# Documentation builds
+_build/
+_static/
+_templates/
+
