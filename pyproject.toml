@@ -8,7 +8,7 @@ dependencies = [
     "aiomysql>=0.3.2",
     "mysql-connector-python>=9.5.0",
     "pandas>=2.3.3",
-    "pydantic[all,email]>=2.12.3",
+    "pydantic>=2.12.3",
     "pymysql>=1.1.2",
     "sqlacodegen>=3.0.0",
     "sqlalchemy>=2.0.44",
@@ -37,7 +37,7 @@ build-backend = "setuptools.build_meta"
 
 #=======================================================
 [tool.ruff]
-target-version = "py313"
+target-version = "py314"
 cache-dir = "D:/TMP/ruff_cache"
 preview = true
 line-length = 200
@@ -118,7 +118,7 @@ skip-magic-trailing-comma = false  # 改为 true 避免与长行冲突
 # 类型检查器: basedpyright
 
 [tool.pyright]
-pythonVersion = "3.13"
+pythonVersion = "3.14"
 typeCheckingMode = "basic"
 reportMissingImports = "error"
 reportUnusedImport = "none"
@@ -140,7 +140,7 @@ exclude = [
 
 # 可选类型检查器：mypy 
 [tool.mypy]
-python_version = "3.13"
+python_version = "3.14"
 cache_dir = "D:/TMP/mypy_cache/"
 show_error_codes = true
 check_untyped_defs = true

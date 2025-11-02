@@ -122,10 +122,11 @@ class AsyncConnectionManager(IAsyncConnectionManager):
         try:
             async with self._engine.connect() as conn:
                 await conn.execute(text('SELECT 1'))
-            return True
-        except Exception as e:
+        except (ConnectionRefusedError, ConnectionError, TimeoutError) as e:
             mylog.error(f'AsyncConnectionManager@ping | 异步连接测试失败: {e}')
             return False
+        else:
+            return True
 
     async def dispose(self) -> None:
         """释放所有异步数据库连接资源
@@ -178,7 +179,7 @@ class AsyncConnectionManager(IAsyncConnectionManager):
             if callable(func):
                 try:
                     status[k] = func()
-                except Exception:
+                except AttributeError, TypeError:
                     status[k] = None
             else:
                 status[k] = None
