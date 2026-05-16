@@ -17,24 +17,7 @@ from __future__ import annotations
 
 from sqlalchemy import Boolean, Column, DateTime, Integer, String, func
 
-from xtsqlorm.models.base import BaseModel
-from xtsqlorm.models.mixins import IdMixin, TimestampMixin
-from xtsqlorm.models.types import JsonEncodedDict
-
-
-class ValidatedJsonEncodedDict(JsonEncodedDict):
-    def process_bind_param(self, value, dialect):
-        if value is not None and not isinstance(value, dict):
-            raise ValueError('Value must be a dictionary')
-        # 可以添加更复杂的验证逻辑
-        return super().process_bind_param(value, dialect)
-
-
-# 或者创建专门的类型
-class PreferencesType(JsonEncodedDict):
-    """专门用于存储用户偏好的JSON类型"""
-
-    pass
+from xtsqlorm import BaseModel, IdMixin, JsonEncodedDict, TimestampMixin
 
 
 class UserModel(BaseModel, IdMixin, TimestampMixin):
@@ -91,7 +74,7 @@ class UserProfileModel(BaseModel, IdMixin):
     birth_date = Column(DateTime)
     address = Column(String(255))
     bio = Column(String(500))
-    preferences = Column(PreferencesType)  # 存储用户偏好
+    preferences = Column(JsonEncodedDict)  # 存储用户偏好
 
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
@@ -108,3 +91,20 @@ if __name__ == '__main__':
             'privacy': {'profile_public': True, 'search_indexed': False},
         },
     )
+    print(profile.preferences)
+
+    user1 = UserModel(
+        username='test',
+        password='test',
+        email='test@test.com',
+        phone='1234567890',
+        is_active=True,
+        is_admin=False,
+        nickname='test',
+        avatar='test.jpg',
+        login_count=0,
+    )
+    print(user1)
+    print(user1.to_dict())
+    print(user1.columns())
+    print(user1.login_count)
